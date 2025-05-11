@@ -17,6 +17,16 @@ func (r *entityResolver) FindAPIInfoByName(ctx context.Context, name string) (*m
 	panic(fmt.Errorf("not implemented: FindAPIInfoByName - findApiInfoByName"))
 }
 
+// FindUserAnimeByID is the resolver for the findUserAnimeByID field.
+func (r *entityResolver) FindUserAnimeByID(ctx context.Context, id string) (*model.UserAnime, error) {
+	panic(fmt.Errorf("not implemented: FindUserAnimeByID - findUserAnimeByID"))
+}
+
+// FindUserListByID is the resolver for the findUserListByID field.
+func (r *entityResolver) FindUserListByID(ctx context.Context, id string) (*model.UserList, error) {
+	panic(fmt.Errorf("not implemented: FindUserListByID - findUserListByID"))
+}
+
 // Entity returns generated.EntityResolver implementation.
 func (r *Resolver) Entity() generated.EntityResolver { return &entityResolver{r} }
 

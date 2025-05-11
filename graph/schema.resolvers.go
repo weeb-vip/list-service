@@ -10,6 +10,7 @@ import (
 
 	"github.com/weeb-vip/list-service/graph/generated"
 	"github.com/weeb-vip/list-service/graph/model"
+	"github.com/weeb-vip/list-service/internal/resolvers"
 )
 
 // GolangTemplateAPI is the resolver for the GolangTemplateAPI field.
@@ -17,16 +18,34 @@ func (r *apiInfoResolver) GolangTemplateAPI(ctx context.Context, obj *model.APII
 	panic(fmt.Errorf("not implemented: GolangTemplateAPI - GolangTemplateAPI"))
 }
 
-// Hello is the resolver for the Hello field.
-func (r *queryResolver) Hello(ctx context.Context) (string, error) {
-	panic(fmt.Errorf("not implemented: Hello - Hello"))
+// CreateList is the resolver for the CreateList field.
+func (r *mutationResolver) CreateList(ctx context.Context, input model.UserListInput) (*model.UserList, error) {
+	return resolvers.UpsertUserList(ctx, r.UserListService, input)
+}
+
+// DeleteList is the resolver for the DeleteList field.
+func (r *mutationResolver) DeleteList(ctx context.Context, id string) (bool, error) {
+	err := resolvers.DeleteUserList(ctx, r.UserListService, id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// UserLists is the resolver for the UserLists field.
+func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error) {
+	return resolvers.GetUserListsByID(ctx, r.UserListService)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.
 func (r *Resolver) ApiInfo() generated.ApiInfoResolver { return &apiInfoResolver{r} }
 
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type apiInfoResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

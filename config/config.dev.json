@@ -1,13 +1,9 @@
 {
   "dbconfig": {
-    "host": "192.168.9.88",
-    "user": "postgres",
+    "host": "localhost",
+    "user": "weeb",
     "password": "mysecretpassword",
-    "database": "anime",
-    "port": 5432
-  },
-  "thetvdbconfig": {
-    "APIKey": "225f48ff-05e0-41f6-a479-42643a545c7a",
-    "APIPIN": "HMXIFHN5"
+    "database": "weeb",
+    "port": 3306
   }
 }

@@ -2,12 +2,12 @@ package db
 
 import (
 	"embed"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/golang-migrate/migrate/v4/source/httpfs"
-	_ "github.com/lib/pq"
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/internal/db"
 	"log"
@@ -38,7 +38,7 @@ func getMigration() (*migrate.Migrate, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbdriver, err := postgres.WithInstance(sqldb, &postgres.Config{MigrationsTable: cfg.DBConfig.MigrationTableName})
+	dbdriver, err := mysql.WithInstance(sqldb, &mysql.Config{})
 	// log files in migrations folder
 	files, err := migrations.ReadDir("migrations")
 	if err != nil {

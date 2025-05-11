@@ -11,20 +11,20 @@ import (
 	"github.com/weeb-vip/list-service/http/handlers/logger"
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 	"github.com/weeb-vip/list-service/internal/db"
-	"github.com/weeb-vip/list-service/internal/db/repositories/dummy"
+	"github.com/weeb-vip/list-service/internal/db/repositories/user_list"
 	"github.com/weeb-vip/list-service/internal/directives"
-	dummy2 "github.com/weeb-vip/list-service/internal/services/dummy"
+	user_list2 "github.com/weeb-vip/list-service/internal/services/user_list"
 	"net/http"
 )
 
 func BuildRootHandler(conf config.Config) http.Handler {
 	database := db.NewDatabase(conf.DBConfig)
-	dummyRepository := dummy.NewDummyRepository(database)
-	dummyService := dummy2.NewDummyService(dummyRepository)
+	userListRepository := user_list.NewUserListRepository(database)
+	userListService := user_list2.NewUserListService(userListRepository)
 
 	resolvers := &graph.Resolver{
-		Config:       conf,
-		DummyService: dummyService,
+		Config:          conf,
+		UserListService: userListService,
 	}
 
 	cfg := generated.Config{Resolvers: resolvers, Directives: directives.GetDirectives()}

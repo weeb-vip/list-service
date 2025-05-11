@@ -1,0 +1,37 @@
+type UserAnime @key(fields: "id") {
+    id: ID!
+    userID: String!
+    animeID: String!
+    status: String
+    score: Float
+    episodes: Int
+    rewatching: Int
+    rewatchingEpisodes: Int
+    tags: [String!]
+    listID: String
+    createdAt: String
+    updatedAt: String
+    deletedAt: String
+}
+
+type UserList @key(fields: "id") {
+    id: ID!
+    userID: String!
+    name: String!
+    description: String
+    type: String
+    tags: [String!]
+    isPublic: Boolean
+    createdAt: String
+    updatedAt: String
+    deletedAt: String
+}
+
+input UserListInput {
+    id: String
+    name: String!
+    description: String
+    type: String
+    tags: [String!]
+    isPublic: Boolean
+}

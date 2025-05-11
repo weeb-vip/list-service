@@ -15,6 +15,10 @@ type ApiInfo @key(fields: "name") {
 }
 
 type Query {
-    Hello: String!
+    UserLists: [UserList!] @Authenticated
+}
 
+type Mutation {
+    CreateList(input: UserListInput!): UserList! @Authenticated
+    DeleteList(id: ID!): Boolean! @Authenticated
 }

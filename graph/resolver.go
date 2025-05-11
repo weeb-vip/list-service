@@ -2,7 +2,7 @@ package graph
 
 import (
 	"github.com/weeb-vip/list-service/config"
-	"github.com/weeb-vip/list-service/internal/services/dummy"
+	"github.com/weeb-vip/list-service/internal/services/user_list"
 )
 
 // This file will not be regenerated automatically.
@@ -10,6 +10,6 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	Config       config.Config
-	DummyService dummy.DummyServiceImpl
+	Config          config.Config
+	UserListService user_list.UserListServiceImpl
 }

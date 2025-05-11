@@ -100,6 +100,46 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 				list[idx[i]] = entity
 				return nil
 			}
+		case "UserAnime":
+			resolverName, err := entityResolverNameForUserAnime(ctx, rep)
+			if err != nil {
+				return fmt.Errorf(`finding resolver for Entity "UserAnime": %w`, err)
+			}
+			switch resolverName {
+
+			case "findUserAnimeByID":
+				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+				if err != nil {
+					return fmt.Errorf(`unmarshalling param 0 for findUserAnimeByID(): %w`, err)
+				}
+				entity, err := ec.resolvers.Entity().FindUserAnimeByID(ctx, id0)
+				if err != nil {
+					return fmt.Errorf(`resolving Entity "UserAnime": %w`, err)
+				}
+
+				list[idx[i]] = entity
+				return nil
+			}
+		case "UserList":
+			resolverName, err := entityResolverNameForUserList(ctx, rep)
+			if err != nil {
+				return fmt.Errorf(`finding resolver for Entity "UserList": %w`, err)
+			}
+			switch resolverName {
+
+			case "findUserListByID":
+				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+				if err != nil {
+					return fmt.Errorf(`unmarshalling param 0 for findUserListByID(): %w`, err)
+				}
+				entity, err := ec.resolvers.Entity().FindUserListByID(ctx, id0)
+				if err != nil {
+					return fmt.Errorf(`resolving Entity "UserList": %w`, err)
+				}
+
+				list[idx[i]] = entity
+				return nil
+			}
 
 		}
 		return fmt.Errorf("%w: %s", ErrUnknownType, typeName)
@@ -184,4 +224,38 @@ func entityResolverNameForApiInfo(ctx context.Context, rep map[string]interface{
 		return "findApiInfoByName", nil
 	}
 	return "", fmt.Errorf("%w for ApiInfo", ErrTypeNotFound)
+}
+
+func entityResolverNameForUserAnime(ctx context.Context, rep map[string]interface{}) (string, error) {
+	for {
+		var (
+			m   map[string]interface{}
+			val interface{}
+			ok  bool
+		)
+		_ = val
+		m = rep
+		if _, ok = m["id"]; !ok {
+			break
+		}
+		return "findUserAnimeByID", nil
+	}
+	return "", fmt.Errorf("%w for UserAnime", ErrTypeNotFound)
+}
+
+func entityResolverNameForUserList(ctx context.Context, rep map[string]interface{}) (string, error) {
+	for {
+		var (
+			m   map[string]interface{}
+			val interface{}
+			ok  bool
+		)
+		_ = val
+		m = rep
+		if _, ok = m["id"]; !ok {
+			break
+		}
+		return "findUserListByID", nil
+	}
+	return "", fmt.Errorf("%w for UserList", ErrTypeNotFound)
 }

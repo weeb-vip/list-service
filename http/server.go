@@ -7,7 +7,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/http/handlers"
-	"github.com/weeb-vip/list-service/metrics"
+	"github.com/weeb-vip/list-service/metrics/prometheus"
 	"log"
 	"net/http"
 )
@@ -25,7 +25,7 @@ func SetupServer(cfg config.Config) *chi.Mux {
 	router.Handle("/ui/playground", playground.Handler("GraphQL playground", "/graphql"))
 	router.Handle("/graphql", handlers.BuildRootHandler(cfg))
 	router.Handle("/healthcheck", handlers.HealthCheckHandler())
-	router.Handle("/metrics", metrics.NewPrometheusInstance().Handler())
+	router.Handle("/metrics", prometheus.NewPrometheusClient().Handler())
 
 	return router
 }

@@ -23,7 +23,7 @@ type DBConfig struct {
 	User               string `default:"weeb" env:"DBUSERNAME"`
 	Password           string `required:"true" env:"DBPASSWORD" default:"mysecretpassword"`
 	Port               uint   `default:"3306" env:"DBPORT"`
-	SSLMode            string `default:"disable" env:"DBSSL"`
+	SSLMode            string `default:"false" env:"DBSSL"`
 	MigrationTableName string `env:"DBMIGRATIONTABLE" default:"__migrations_list-service"`
 }
 

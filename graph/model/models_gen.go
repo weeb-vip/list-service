@@ -11,6 +11,48 @@ type APIInfo struct {
 
 func (APIInfo) IsEntity() {}
 
+type UserAnime struct {
+	ID                 string   `json:"id"`
+	UserID             string   `json:"userID"`
+	AnimeID            string   `json:"animeID"`
+	Status             *string  `json:"status,omitempty"`
+	Score              *float64 `json:"score,omitempty"`
+	Episodes           *int     `json:"episodes,omitempty"`
+	Rewatching         *int     `json:"rewatching,omitempty"`
+	RewatchingEpisodes *int     `json:"rewatchingEpisodes,omitempty"`
+	Tags               []string `json:"tags,omitempty"`
+	ListID             *string  `json:"listID,omitempty"`
+	CreatedAt          *string  `json:"createdAt,omitempty"`
+	UpdatedAt          *string  `json:"updatedAt,omitempty"`
+	DeletedAt          *string  `json:"deletedAt,omitempty"`
+}
+
+func (UserAnime) IsEntity() {}
+
+type UserList struct {
+	ID          string   `json:"id"`
+	UserID      string   `json:"userID"`
+	Name        string   `json:"name"`
+	Description *string  `json:"description,omitempty"`
+	Type        *string  `json:"type,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	IsPublic    *bool    `json:"isPublic,omitempty"`
+	CreatedAt   *string  `json:"createdAt,omitempty"`
+	UpdatedAt   *string  `json:"updatedAt,omitempty"`
+	DeletedAt   *string  `json:"deletedAt,omitempty"`
+}
+
+func (UserList) IsEntity() {}
+
+type UserListInput struct {
+	ID          *string  `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description *string  `json:"description,omitempty"`
+	Type        *string  `json:"type,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	IsPublic    *bool    `json:"isPublic,omitempty"`
+}
+
 type GolangTemplateAPI struct {
 	// Version of event golang-template service
 	Version string `json:"version"`
