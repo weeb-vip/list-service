@@ -38,7 +38,9 @@ func getMigration() (*migrate.Migrate, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbdriver, err := mysql.WithInstance(sqldb, &mysql.Config{})
+	dbdriver, err := mysql.WithInstance(sqldb, &mysql.Config{
+		MigrationsTable: cfg.DBConfig.MigrationTableName,
+	})
 	// log files in migrations folder
 	files, err := migrations.ReadDir("migrations")
 	if err != nil {
