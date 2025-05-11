@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS user_anime
 (
     id                  VARCHAR(36) PRIMARY KEY,
     user_id             VARCHAR(36) NOT NULL,
-    anime_id            INT         NOT NULL,
+    anime_id            VARCHAR(36) NOT NULL,
     status              VARCHAR(30)  DEFAULT NULL,
     score               FLOAT        DEFAULT 0.0,
     episodes            INT          DEFAULT 0,

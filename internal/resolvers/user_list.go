@@ -48,7 +48,7 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 		Tags:        userList.Tags,
 		Description: userList.Description,
 	}
-	createdUserList, err := userListService.UpsertUserList(ctx, userListEntity)
+	createdUserList, err := userListService.Upsert(ctx, userListEntity)
 	if err != nil {
 		return nil, err
 	}

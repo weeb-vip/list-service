@@ -1,14 +1,18 @@
 package user_anime
 
-import "github.com/weeb-vip/list-service/internal/db"
+import (
+	"context"
+	"github.com/google/uuid"
+	"github.com/weeb-vip/list-service/internal/db"
+)
 
 type UserAnimeRepositoryImpl interface {
-	Upsert(userAnime *UserAnime) error
-	Delete(userAnime *UserAnime) error
-	FindByUserId(userId string) ([]*UserAnime, error)
-	FindByAnimeId(animeId string) ([]*UserAnime, error)
-	FindByUserIdAndAnimeId(userId string, animeId string) (*UserAnime, error)
-	FindByListId(listId string) ([]*UserAnime, error)
+	Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error)
+	Delete(ctx context.Context, userAnime *UserAnime) error
+	FindByUserId(ctx context.Context, userId string) ([]*UserAnime, error)
+	FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error)
+	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error)
+	FindByListId(ctx context.Context, listId string) ([]*UserAnime, error)
 }
 
 type UserAnimeRepository struct {
@@ -19,15 +23,24 @@ func NewUserAnimeRepository(db *db.DB) UserAnimeRepositoryImpl {
 	return &UserAnimeRepository{db: db}
 }
 
-func (a *UserAnimeRepository) Upsert(userAnime *UserAnime) error {
-	err := a.db.DB.Save(userAnime).Error
-	if err != nil {
-		return err
+func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error) {
+	if userAnime.ID == "" {
+		userAnime.ID = uuid.New().String()
+		err := a.db.DB.Save(userAnime).Error
+		if err != nil {
+			return nil, err
+		}
+		return userAnime, nil
 	}
-	return nil
+
+	err := a.db.DB.Where("user_id = ? AND anime_id = ?", userAnime.UserID, userAnime.AnimeID).FirstOrCreate(userAnime).Error
+	if err != nil {
+		return nil, err
+	}
+	return userAnime, nil
 }
 
-func (a *UserAnimeRepository) Delete(userAnime *UserAnime) error {
+func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) error {
 	err := a.db.DB.Delete(userAnime).Error
 	if err != nil {
 		return err
@@ -35,7 +48,7 @@ func (a *UserAnimeRepository) Delete(userAnime *UserAnime) error {
 	return nil
 }
 
-func (a *UserAnimeRepository) FindByUserId(userId string) ([]*UserAnime, error) {
+func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string) ([]*UserAnime, error) {
 	var userAnimes []*UserAnime
 	err := a.db.DB.Where("user_id = ?", userId).Find(&userAnimes).Error
 	if err != nil {
@@ -44,7 +57,7 @@ func (a *UserAnimeRepository) FindByUserId(userId string) ([]*UserAnime, error) 
 	return userAnimes, nil
 }
 
-func (a *UserAnimeRepository) FindByAnimeId(animeId string) ([]*UserAnime, error) {
+func (a *UserAnimeRepository) FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error) {
 	var userAnimes []*UserAnime
 	err := a.db.DB.Where("anime_id = ?", animeId).Find(&userAnimes).Error
 	if err != nil {
@@ -53,7 +66,7 @@ func (a *UserAnimeRepository) FindByAnimeId(animeId string) ([]*UserAnime, error
 	return userAnimes, nil
 }
 
-func (a *UserAnimeRepository) FindByUserIdAndAnimeId(userId string, animeId string) (*UserAnime, error) {
+func (a *UserAnimeRepository) FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error) {
 	var userAnime UserAnime
 	err := a.db.DB.Where("user_id = ? AND anime_id = ?", userId, animeId).First(&userAnime).Error
 	if err != nil {
@@ -62,7 +75,7 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeId(userId string, animeId stri
 	return &userAnime, nil
 }
 
-func (a *UserAnimeRepository) FindByListId(listId string) ([]*UserAnime, error) {
+func (a *UserAnimeRepository) FindByListId(ctx context.Context, listId string) ([]*UserAnime, error) {
 	var userAnimes []*UserAnime
 	err := a.db.DB.Where("list_id = ?", listId).Find(&userAnimes).Error
 	if err != nil {

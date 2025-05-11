@@ -16,9 +16,13 @@ type ApiInfo @key(fields: "name") {
 
 type Query {
     UserLists: [UserList!] @Authenticated
+    UserAnimes: [UserAnime!] @Authenticated
 }
 
 type Mutation {
     CreateList(input: UserListInput!): UserList! @Authenticated
     DeleteList(id: ID!): Boolean! @Authenticated
+    AddAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    UpdateAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    DeleteAnime(id: ID!): Boolean! @Authenticated
 }

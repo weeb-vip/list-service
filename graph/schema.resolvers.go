@@ -32,9 +32,33 @@ func (r *mutationResolver) DeleteList(ctx context.Context, id string) (bool, err
 	return true, nil
 }
 
+// AddAnime is the resolver for the AddAnime field.
+func (r *mutationResolver) AddAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error) {
+	return resolvers.UpsertUserAnime(ctx, r.UserAnimeService, input)
+}
+
+// UpdateAnime is the resolver for the UpdateAnime field.
+func (r *mutationResolver) UpdateAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error) {
+	return resolvers.UpsertUserAnime(ctx, r.UserAnimeService, input)
+}
+
+// DeleteAnime is the resolver for the DeleteAnime field.
+func (r *mutationResolver) DeleteAnime(ctx context.Context, id string) (bool, error) {
+	err := resolvers.DeleteUserAnime(ctx, r.UserAnimeService, id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // UserLists is the resolver for the UserLists field.
 func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error) {
 	return resolvers.GetUserListsByID(ctx, r.UserListService)
+}
+
+// UserAnimes is the resolver for the UserAnimes field.
+func (r *queryResolver) UserAnimes(ctx context.Context) ([]*model.UserAnime, error) {
+	return resolvers.GetUserAnimeByID(ctx, r.UserAnimeService)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.

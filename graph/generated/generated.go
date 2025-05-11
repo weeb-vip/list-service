@@ -61,11 +61,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateList func(childComplexity int, input model.UserListInput) int
-		DeleteList func(childComplexity int, id string) int
+		AddAnime    func(childComplexity int, input model.UserAnimeInput) int
+		CreateList  func(childComplexity int, input model.UserListInput) int
+		DeleteAnime func(childComplexity int, id string) int
+		DeleteList  func(childComplexity int, id string) int
+		UpdateAnime func(childComplexity int, input model.UserAnimeInput) int
 	}
 
 	Query struct {
+		UserAnimes         func(childComplexity int) int
 		UserLists          func(childComplexity int) int
 		__resolve__service func(childComplexity int) int
 		__resolve_entities func(childComplexity int, representations []map[string]interface{}) int
@@ -120,9 +124,13 @@ type EntityResolver interface {
 type MutationResolver interface {
 	CreateList(ctx context.Context, input model.UserListInput) (*model.UserList, error)
 	DeleteList(ctx context.Context, id string) (bool, error)
+	AddAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
+	UpdateAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
+	DeleteAnime(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	UserLists(ctx context.Context) ([]*model.UserList, error)
+	UserAnimes(ctx context.Context) ([]*model.UserAnime, error)
 }
 
 type executableSchema struct {
@@ -190,6 +198,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindUserListByID(childComplexity, args["id"].(string)), true
 
+	case "Mutation.AddAnime":
+		if e.complexity.Mutation.AddAnime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_AddAnime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddAnime(childComplexity, args["input"].(model.UserAnimeInput)), true
+
 	case "Mutation.CreateList":
 		if e.complexity.Mutation.CreateList == nil {
 			break
@@ -202,6 +222,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateList(childComplexity, args["input"].(model.UserListInput)), true
 
+	case "Mutation.DeleteAnime":
+		if e.complexity.Mutation.DeleteAnime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_DeleteAnime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteAnime(childComplexity, args["id"].(string)), true
+
 	case "Mutation.DeleteList":
 		if e.complexity.Mutation.DeleteList == nil {
 			break
@@ -213,6 +245,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteList(childComplexity, args["id"].(string)), true
+
+	case "Mutation.UpdateAnime":
+		if e.complexity.Mutation.UpdateAnime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_UpdateAnime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateAnime(childComplexity, args["input"].(model.UserAnimeInput)), true
+
+	case "Query.UserAnimes":
+		if e.complexity.Query.UserAnimes == nil {
+			break
+		}
+
+		return e.complexity.Query.UserAnimes(childComplexity), true
 
 	case "Query.UserLists":
 		if e.complexity.Query.UserLists == nil {
@@ -423,6 +474,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputUserAnimeInput,
 		ec.unmarshalInputUserListInput,
 	)
 	first := true
@@ -567,17 +619,21 @@ type ApiInfo @key(fields: "name") {
 
 type Query {
     UserLists: [UserList!] @Authenticated
+    UserAnimes: [UserAnime!] @Authenticated
 }
 
 type Mutation {
     CreateList(input: UserListInput!): UserList! @Authenticated
     DeleteList(id: ID!): Boolean! @Authenticated
+    AddAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    UpdateAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    DeleteAnime(id: ID!): Boolean! @Authenticated
 }`, BuiltIn: false},
 	{Name: "../types.graphqls", Input: `type UserAnime @key(fields: "id") {
     id: ID!
     userID: String!
     animeID: String!
-    status: String
+    status: Status
     score: Float
     episodes: Int
     rewatching: Int
@@ -609,6 +665,27 @@ input UserListInput {
     type: String
     tags: [String!]
     isPublic: Boolean
+}
+
+input UserAnimeInput {
+    id: String
+    animeID: String!
+    status: Status
+    score: Float
+    episodes: Int
+    rewatching: Int
+    rewatchingEpisodes: Int
+    tags: [String!]
+    listID: String
+}
+
+
+enum Status {
+    WATCHING
+    COMPLETED
+    ONHOLD
+    DROPPED
+    PLANTOWATCH
 }`, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
 	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
@@ -707,6 +784,21 @@ func (ec *executionContext) field_Entity_findUserListByID_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_AddAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserAnimeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_CreateList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -722,6 +814,21 @@ func (ec *executionContext) field_Mutation_CreateList_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_DeleteAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_DeleteList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -734,6 +841,21 @@ func (ec *executionContext) field_Mutation_DeleteList_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_UpdateAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserAnimeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1290,6 +1412,287 @@ func (ec *executionContext) fieldContext_Mutation_DeleteList(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_AddAnime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_AddAnime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddAnime(rctx, fc.Args["input"].(model.UserAnimeInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserAnime); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserAnime`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnime)
+	fc.Result = res
+	return ec.marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_AddAnime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserAnime_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserAnime_userID(ctx, field)
+			case "animeID":
+				return ec.fieldContext_UserAnime_animeID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserAnime_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserAnime_score(ctx, field)
+			case "episodes":
+				return ec.fieldContext_UserAnime_episodes(ctx, field)
+			case "rewatching":
+				return ec.fieldContext_UserAnime_rewatching(ctx, field)
+			case "rewatchingEpisodes":
+				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserAnime_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserAnime_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserAnime_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_AddAnime_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_UpdateAnime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_UpdateAnime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateAnime(rctx, fc.Args["input"].(model.UserAnimeInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserAnime); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserAnime`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnime)
+	fc.Result = res
+	return ec.marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_UpdateAnime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserAnime_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserAnime_userID(ctx, field)
+			case "animeID":
+				return ec.fieldContext_UserAnime_animeID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserAnime_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserAnime_score(ctx, field)
+			case "episodes":
+				return ec.fieldContext_UserAnime_episodes(ctx, field)
+			case "rewatching":
+				return ec.fieldContext_UserAnime_rewatching(ctx, field)
+			case "rewatchingEpisodes":
+				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserAnime_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserAnime_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserAnime_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_UpdateAnime_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_DeleteAnime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_DeleteAnime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteAnime(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_DeleteAnime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_DeleteAnime_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_UserLists(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_UserLists(ctx, field)
 	if err != nil {
@@ -1368,6 +1771,95 @@ func (ec *executionContext) fieldContext_Query_UserLists(ctx context.Context, fi
 				return ec.fieldContext_UserList_deletedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserList", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_UserAnimes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_UserAnimes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserAnimes(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.UserAnime); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/weeb-vip/list-service/graph/model.UserAnime`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UserAnime)
+	fc.Result = res
+	return ec.marshalOUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_UserAnimes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserAnime_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserAnime_userID(ctx, field)
+			case "animeID":
+				return ec.fieldContext_UserAnime_animeID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserAnime_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserAnime_score(ctx, field)
+			case "episodes":
+				return ec.fieldContext_UserAnime_episodes(ctx, field)
+			case "rewatching":
+				return ec.fieldContext_UserAnime_rewatching(ctx, field)
+			case "rewatchingEpisodes":
+				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserAnime_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserAnime_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserAnime_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
 		},
 	}
 	return fc, nil
@@ -1760,9 +2252,9 @@ func (ec *executionContext) _UserAnime_status(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.Status)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserAnime_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1772,7 +2264,7 @@ func (ec *executionContext) fieldContext_UserAnime_status(ctx context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Status does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4424,6 +4916,107 @@ func (ec *executionContext) fieldContext_golangTemplateAPI_version(ctx context.C
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputUserAnimeInput(ctx context.Context, obj interface{}) (model.UserAnimeInput, error) {
+	var it model.UserAnimeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "animeID", "status", "score", "episodes", "rewatching", "rewatchingEpisodes", "tags", "listID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "animeID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("animeID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AnimeID = data
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "score":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("score"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Score = data
+		case "episodes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("episodes"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Episodes = data
+		case "rewatching":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewatching"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rewatching = data
+		case "rewatchingEpisodes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewatchingEpisodes"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RewatchingEpisodes = data
+		case "tags":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "listID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ListID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserListInput(ctx context.Context, obj interface{}) (model.UserListInput, error) {
 	var it model.UserListInput
 	asMap := map[string]interface{}{}
@@ -4752,6 +5345,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "AddAnime":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_AddAnime(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "UpdateAnime":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_UpdateAnime(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "DeleteAnime":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_DeleteAnime(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4804,6 +5418,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_UserLists(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "UserAnimes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_UserAnimes(ctx, field)
 				return res
 			}
 
@@ -5494,6 +6127,11 @@ func (ec *executionContext) marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlis
 	return ec._UserAnime(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx context.Context, v interface{}) (model.UserAnimeInput, error) {
+	res, err := ec.unmarshalInputUserAnimeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNUserList2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserList(ctx context.Context, sel ast.SelectionSet, v model.UserList) graphql.Marshaler {
 	return ec._UserList(ctx, sel, &v)
 }
@@ -5948,6 +6586,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) unmarshalOStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐStatus(ctx context.Context, v interface{}) (*model.Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.Status)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v *model.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6010,6 +6664,53 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserAnime) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOUserList2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserListᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserList) graphql.Marshaler {

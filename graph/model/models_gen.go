@@ -2,6 +2,12 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
 type APIInfo struct {
 	// API Info of the golang-tempalte
 	GolangTemplateAPI *GolangTemplateAPI `json:"golangTemplateAPI"`
@@ -15,7 +21,7 @@ type UserAnime struct {
 	ID                 string   `json:"id"`
 	UserID             string   `json:"userID"`
 	AnimeID            string   `json:"animeID"`
-	Status             *string  `json:"status,omitempty"`
+	Status             *Status  `json:"status,omitempty"`
 	Score              *float64 `json:"score,omitempty"`
 	Episodes           *int     `json:"episodes,omitempty"`
 	Rewatching         *int     `json:"rewatching,omitempty"`
@@ -28,6 +34,18 @@ type UserAnime struct {
 }
 
 func (UserAnime) IsEntity() {}
+
+type UserAnimeInput struct {
+	ID                 *string  `json:"id,omitempty"`
+	AnimeID            string   `json:"animeID"`
+	Status             *Status  `json:"status,omitempty"`
+	Score              *float64 `json:"score,omitempty"`
+	Episodes           *int     `json:"episodes,omitempty"`
+	Rewatching         *int     `json:"rewatching,omitempty"`
+	RewatchingEpisodes *int     `json:"rewatchingEpisodes,omitempty"`
+	Tags               []string `json:"tags,omitempty"`
+	ListID             *string  `json:"listID,omitempty"`
+}
 
 type UserList struct {
 	ID          string   `json:"id"`
@@ -56,4 +74,51 @@ type UserListInput struct {
 type GolangTemplateAPI struct {
 	// Version of event golang-template service
 	Version string `json:"version"`
+}
+
+type Status string
+
+const (
+	StatusWatching    Status = "WATCHING"
+	StatusCompleted   Status = "COMPLETED"
+	StatusOnhold      Status = "ONHOLD"
+	StatusDropped     Status = "DROPPED"
+	StatusPlantowatch Status = "PLANTOWATCH"
+)
+
+var AllStatus = []Status{
+	StatusWatching,
+	StatusCompleted,
+	StatusOnhold,
+	StatusDropped,
+	StatusPlantowatch,
+}
+
+func (e Status) IsValid() bool {
+	switch e {
+	case StatusWatching, StatusCompleted, StatusOnhold, StatusDropped, StatusPlantowatch:
+		return true
+	}
+	return false
+}
+
+func (e Status) String() string {
+	return string(e)
+}
+
+func (e *Status) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Status(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Status", str)
+	}
+	return nil
+}
+
+func (e Status) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

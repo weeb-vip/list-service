@@ -17,7 +17,7 @@ type UserList struct {
 
 type UserListServiceImpl interface {
 	GetUserListsByID(ctx context.Context, userID string) ([]*user_list.UserList, error)
-	UpsertUserList(ctx context.Context, userList *UserList) (*user_list.UserList, error)
+	Upsert(ctx context.Context, userList *UserList) (*user_list.UserList, error)
 	DeleteUserList(ctx context.Context, userid string, id string) error
 }
 
@@ -40,7 +40,7 @@ func (u *UserListService) GetUserListsByID(ctx context.Context, userID string) (
 	return userLists, nil
 }
 
-func (u *UserListService) UpsertUserList(ctx context.Context, userList *UserList) (*user_list.UserList, error) {
+func (u *UserListService) Upsert(ctx context.Context, userList *UserList) (*user_list.UserList, error) {
 	// Convert model.UserList to user_list.UserList
 	// convert tags to comma separated string
 	tags := strings.Join(userList.Tags, ",")

@@ -11,8 +11,10 @@ import (
 	"github.com/weeb-vip/list-service/http/handlers/logger"
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 	"github.com/weeb-vip/list-service/internal/db"
+	"github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_list"
 	"github.com/weeb-vip/list-service/internal/directives"
+	user_anime2 "github.com/weeb-vip/list-service/internal/services/user_anime"
 	user_list2 "github.com/weeb-vip/list-service/internal/services/user_list"
 	"net/http"
 )
@@ -21,10 +23,13 @@ func BuildRootHandler(conf config.Config) http.Handler {
 	database := db.NewDatabase(conf.DBConfig)
 	userListRepository := user_list.NewUserListRepository(database)
 	userListService := user_list2.NewUserListService(userListRepository)
+	userAnimeRepository := user_anime.NewUserAnimeRepository(database)
+	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
 
 	resolvers := &graph.Resolver{
-		Config:          conf,
-		UserListService: userListService,
+		Config:           conf,
+		UserListService:  userListService,
+		UserAnimeService: userAnimeService,
 	}
 
 	cfg := generated.Config{Resolvers: resolvers, Directives: directives.GetDirectives()}

@@ -2,7 +2,7 @@ type UserAnime @key(fields: "id") {
     id: ID!
     userID: String!
     animeID: String!
-    status: String
+    status: Status
     score: Float
     episodes: Int
     rewatching: Int
@@ -34,4 +34,25 @@ input UserListInput {
     type: String
     tags: [String!]
     isPublic: Boolean
+}
+
+input UserAnimeInput {
+    id: String
+    animeID: String!
+    status: Status
+    score: Float
+    episodes: Int
+    rewatching: Int
+    rewatchingEpisodes: Int
+    tags: [String!]
+    listID: String
+}
+
+
+enum Status {
+    WATCHING
+    COMPLETED
+    ONHOLD
+    DROPPED
+    PLANTOWATCH
 }
