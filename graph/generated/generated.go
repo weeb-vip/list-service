@@ -16,7 +16,7 @@ import (
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
-	"github.com/weeb-vip/golang-template/graph/model"
+	"github.com/weeb-vip/list-service/graph/model"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -461,7 +461,7 @@ func (ec *executionContext) _ApiInfo_golangTemplateAPI(ctx context.Context, fiel
 	}
 	res := resTmp.(*model.GolangTemplateAPI)
 	fc.Result = res
-	return ec.marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐGolangTemplateAPI(ctx, field.Selections, res)
+	return ec.marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ApiInfo_golangTemplateAPI(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -553,7 +553,7 @@ func (ec *executionContext) _Entity_findApiInfoByName(ctx context.Context, field
 	}
 	res := resTmp.(*model.APIInfo)
 	fc.Result = res
-	return ec.marshalNApiInfo2ᚖgithubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐAPIInfo(ctx, field.Selections, res)
+	return ec.marshalNApiInfo2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAPIInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Entity_findApiInfoByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3400,11 +3400,11 @@ func (ec *executionContext) _golangTemplateAPI(ctx context.Context, sel ast.Sele
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNApiInfo2githubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐAPIInfo(ctx context.Context, sel ast.SelectionSet, v model.APIInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNApiInfo2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAPIInfo(ctx context.Context, sel ast.SelectionSet, v model.APIInfo) graphql.Marshaler {
 	return ec._ApiInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNApiInfo2ᚖgithubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐAPIInfo(ctx context.Context, sel ast.SelectionSet, v *model.APIInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNApiInfo2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAPIInfo(ctx context.Context, sel ast.SelectionSet, v *model.APIInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3807,11 +3807,11 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalNgolangTemplateAPI2githubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v model.GolangTemplateAPI) graphql.Marshaler {
+func (ec *executionContext) marshalNgolangTemplateAPI2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v model.GolangTemplateAPI) graphql.Marshaler {
 	return ec._golangTemplateAPI(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋgolangᚑtemplateᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v *model.GolangTemplateAPI) graphql.Marshaler {
+func (ec *executionContext) marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v *model.GolangTemplateAPI) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

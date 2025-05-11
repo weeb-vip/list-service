@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/weeb-vip/golang-template/http/handlers/requestinfo"
+	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 
 	"github.com/stretchr/testify/assert"
 )

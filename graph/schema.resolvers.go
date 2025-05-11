@@ -8,8 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/weeb-vip/golang-template/graph/generated"
-	"github.com/weeb-vip/golang-template/graph/model"
+	"github.com/weeb-vip/list-service/graph/generated"
+	"github.com/weeb-vip/list-service/graph/model"
 )
 
 // GolangTemplateAPI is the resolver for the GolangTemplateAPI field.

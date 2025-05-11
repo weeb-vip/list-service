@@ -8,8 +8,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/lib/pq"
-	"github.com/weeb-vip/golang-template/config"
-	"github.com/weeb-vip/golang-template/internal/db"
+	"github.com/weeb-vip/list-service/config"
+	"github.com/weeb-vip/list-service/internal/db"
 	"log"
 	"net/http"
 )

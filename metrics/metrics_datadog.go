@@ -3,7 +3,7 @@ package metrics
 import (
 	metricsLib "github.com/TempMee/go-metrics-lib"
 	"github.com/TempMee/go-metrics-lib/clients/datadog"
-	"github.com/weeb-vip/golang-template/config"
+	"github.com/weeb-vip/list-service/config"
 )
 
 var datadogInstance *datadog.DataDogClient

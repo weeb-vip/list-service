@@ -3,8 +3,8 @@ package dummy
 import (
 	"context"
 	metrics_lib "github.com/TempMee/go-metrics-lib"
-	"github.com/weeb-vip/golang-template/internal/db"
-	"github.com/weeb-vip/golang-template/metrics"
+	"github.com/weeb-vip/list-service/internal/db"
+	"github.com/weeb-vip/list-service/metrics"
 	"time"
 )
 

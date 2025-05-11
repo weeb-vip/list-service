@@ -24,7 +24,7 @@ type DBConfig struct {
 	Password           string `required:"true" env:"DBPASSWORD" default:"mysecretpassword"`
 	Port               uint   `default:"3306" env:"DBPORT"`
 	SSLMode            string `default:"disable" env:"DBSSL"`
-	MigrationTableName string `env:"DBMIGRATIONTABLE" default:"__migrations_golang-template"`
+	MigrationTableName string `env:"DBMIGRATIONTABLE" default:"__migrations_list-service"`
 }
 
 type DataDogConfig struct {

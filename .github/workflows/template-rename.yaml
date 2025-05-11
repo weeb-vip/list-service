@@ -27,7 +27,7 @@ jobs:
       - name: Check for placeholder
         id: check
         run: |
-          if grep -r 'golang-template' . || grep -r 'golangTemplateAPI' .; then
+          if grep -r 'list-service' . || grep -r 'golangTemplateAPI' .; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
@@ -38,14 +38,14 @@ jobs:
         run: |
           find . -type f \( -name '*.go' -o -name '*.graphql' -o -name '*.gql' -o -name '*.mod' -o -name '*.yml' -o -name '*.yaml' \) \
             -not -path "./.git/*" \
-            -exec sed -i "s/golang-template/${{ steps.repo.outputs.REPO_NAME }}/g" {} +
+            -exec sed -i "s/list-service/${{ steps.repo.outputs.REPO_NAME }}/g" {} +
 
           find . -type f \( -name '*.go' -o -name '*.graphql' -o -name '*.gql' \) \
             -not -path "./.git/*" \
             -exec sed -i "s/golangTemplateAPI/${{ steps.repo.outputs.TYPE_NAME }}/g" {} +
 
-          find . -type d -name 'golang-template' | while read -r dir; do
-            newdir=$(echo "$dir" | sed "s/golang-template/${{ steps.repo.outputs.REPO_NAME }}/")
+          find . -type d -name 'list-service' | while read -r dir; do
+            newdir=$(echo "$dir" | sed "s/list-service/${{ steps.repo.outputs.REPO_NAME }}/")
             mv "$dir" "$newdir"
           done
 

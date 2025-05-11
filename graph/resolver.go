@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"github.com/weeb-vip/golang-template/config"
-	"github.com/weeb-vip/golang-template/internal/services/dummy"
+	"github.com/weeb-vip/list-service/config"
+	"github.com/weeb-vip/list-service/internal/services/dummy"
 )
 
 // This file will not be regenerated automatically.

@@ -3,8 +3,8 @@ package producer
 import (
 	"context"
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/weeb-vip/golang-template/config"
-	"github.com/weeb-vip/golang-template/internal/logger"
+	"github.com/weeb-vip/list-service/config"
+	"github.com/weeb-vip/list-service/internal/logger"
 	"go.uber.org/zap"
 )
 

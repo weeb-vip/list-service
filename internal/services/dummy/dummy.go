@@ -2,7 +2,7 @@ package dummy
 
 import (
 	"context"
-	"github.com/weeb-vip/golang-template/internal/db/repositories/dummy"
+	"github.com/weeb-vip/list-service/internal/db/repositories/dummy"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 

@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"github.com/weeb-vip/golang-template/config"
+	"github.com/weeb-vip/list-service/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

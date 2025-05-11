@@ -5,9 +5,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/rs/cors"
-	"github.com/weeb-vip/golang-template/config"
-	"github.com/weeb-vip/golang-template/http/handlers"
-	"github.com/weeb-vip/golang-template/metrics"
+	"github.com/weeb-vip/list-service/config"
+	"github.com/weeb-vip/list-service/http/handlers"
+	"github.com/weeb-vip/list-service/metrics"
 	"log"
 	"net/http"
 )

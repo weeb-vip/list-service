@@ -4,7 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package commands
 
 import (
-	"github.com/weeb-vip/golang-template/db"
+	"github.com/weeb-vip/list-service/db"
 
 	"github.com/spf13/cobra"
 )

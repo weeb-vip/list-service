@@ -1,4 +1,4 @@
-module github.com/weeb-vip/golang-template
+module github.com/weeb-vip/list-service
 
 go 1.23
 
