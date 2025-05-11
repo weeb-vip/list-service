@@ -26,7 +26,7 @@ func NewUserAnimeRepository(db *db.DB) UserAnimeRepositoryImpl {
 func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error) {
 
 	// check if animeid and userid already exist
-	var existing UserAnime
+	var existing *UserAnime
 	err := a.db.DB.Where("user_id = ? AND anime_id = ?", userAnime.UserID, userAnime.AnimeID).First(&existing).Error
 	if err != nil {
 		if err.Error() != "record not found" {
@@ -34,17 +34,23 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 		}
 	}
 	// if not found, create new with uuid
-	if existing.ID == "" {
+	if existing == nil {
 		userAnime.ID = uuid.New().String()
 		err := a.db.DB.Create(userAnime).Error
 		if err != nil {
 			return nil, err
 		}
 		return userAnime, nil
-
 	}
 
-	err = a.db.DB.Where("user_id = ? AND anime_id = ?", userAnime.UserID, userAnime.AnimeID).FirstOrCreate(userAnime).Error
+	// if found, update
+	userAnime.ID = existing.ID
+	userAnime.CreatedAt = existing.CreatedAt
+	userAnime.UpdatedAt = existing.UpdatedAt
+	userAnime.ListID = existing.ListID
+	userAnime.CreatedAt = existing.CreatedAt
+	userAnime.UpdatedAt = existing.UpdatedAt
+	err = a.db.DB.Save(userAnime).Error
 	if err != nil {
 		return nil, err
 	}
