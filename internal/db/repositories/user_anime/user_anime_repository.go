@@ -2,8 +2,10 @@ package user_anime
 
 import (
 	"context"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/weeb-vip/list-service/internal/db"
+	"gorm.io/gorm"
 )
 
 type UserAnimeRepositoryImpl interface {
@@ -33,8 +35,8 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 			return nil, err
 		}
 	}
-	// if not found, create new with uuid
-	if existing == nil {
+	// if err is gorm.ErrRecordNotFound, create new userAnime
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		userAnime.ID = uuid.New().String()
 		err := a.db.DB.Create(userAnime).Error
 		if err != nil {
