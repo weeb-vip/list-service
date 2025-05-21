@@ -60,6 +60,10 @@ type ComplexityRoot struct {
 		FindUserListByID  func(childComplexity int, id string) int
 	}
 
+	ListServiceAPI struct {
+		Version func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AddAnime    func(childComplexity int, input model.UserAnimeInput) int
 		CreateList  func(childComplexity int, input model.UserListInput) int
@@ -69,7 +73,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		UserAnimes         func(childComplexity int) int
+		UserAnimes         func(childComplexity int, input model.UserAnimesInput) int
 		UserLists          func(childComplexity int) int
 		__resolve__service func(childComplexity int) int
 		__resolve_entities func(childComplexity int, representations []map[string]interface{}) int
@@ -91,6 +95,13 @@ type ComplexityRoot struct {
 		UserID             func(childComplexity int) int
 	}
 
+	UserAnimePaginated struct {
+		Animes func(childComplexity int) int
+		Limit  func(childComplexity int) int
+		Page   func(childComplexity int) int
+		Total  func(childComplexity int) int
+	}
+
 	UserList struct {
 		CreatedAt   func(childComplexity int) int
 		DeletedAt   func(childComplexity int) int
@@ -107,14 +118,10 @@ type ComplexityRoot struct {
 	_Service struct {
 		SDL func(childComplexity int) int
 	}
-
-	GolangTemplateAPI struct {
-		Version func(childComplexity int) int
-	}
 }
 
 type ApiInfoResolver interface {
-	GolangTemplateAPI(ctx context.Context, obj *model.APIInfo) (*model.GolangTemplateAPI, error)
+	GolangTemplateAPI(ctx context.Context, obj *model.APIInfo) (*model.ListServiceAPI, error)
 }
 type EntityResolver interface {
 	FindAPIInfoByName(ctx context.Context, name string) (*model.APIInfo, error)
@@ -130,7 +137,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	UserLists(ctx context.Context) ([]*model.UserList, error)
-	UserAnimes(ctx context.Context) ([]*model.UserAnime, error)
+	UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error)
 }
 
 type executableSchema struct {
@@ -198,6 +205,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindUserListByID(childComplexity, args["id"].(string)), true
 
+	case "ListServiceAPI.version":
+		if e.complexity.ListServiceAPI.Version == nil {
+			break
+		}
+
+		return e.complexity.ListServiceAPI.Version(childComplexity), true
+
 	case "Mutation.AddAnime":
 		if e.complexity.Mutation.AddAnime == nil {
 			break
@@ -263,7 +277,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.UserAnimes(childComplexity), true
+		args, err := ec.field_Query_UserAnimes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserAnimes(childComplexity, args["input"].(model.UserAnimesInput)), true
 
 	case "Query.UserLists":
 		if e.complexity.Query.UserLists == nil {
@@ -382,6 +401,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserAnime.UserID(childComplexity), true
 
+	case "UserAnimePaginated.animes":
+		if e.complexity.UserAnimePaginated.Animes == nil {
+			break
+		}
+
+		return e.complexity.UserAnimePaginated.Animes(childComplexity), true
+
+	case "UserAnimePaginated.limit":
+		if e.complexity.UserAnimePaginated.Limit == nil {
+			break
+		}
+
+		return e.complexity.UserAnimePaginated.Limit(childComplexity), true
+
+	case "UserAnimePaginated.page":
+		if e.complexity.UserAnimePaginated.Page == nil {
+			break
+		}
+
+		return e.complexity.UserAnimePaginated.Page(childComplexity), true
+
+	case "UserAnimePaginated.total":
+		if e.complexity.UserAnimePaginated.Total == nil {
+			break
+		}
+
+		return e.complexity.UserAnimePaginated.Total(childComplexity), true
+
 	case "UserList.createdAt":
 		if e.complexity.UserList.CreatedAt == nil {
 			break
@@ -459,13 +506,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity._Service.SDL(childComplexity), true
 
-	case "golangTemplateAPI.version":
-		if e.complexity.GolangTemplateAPI.Version == nil {
-			break
-		}
-
-		return e.complexity.GolangTemplateAPI.Version(childComplexity), true
-
 	}
 	return 0, false
 }
@@ -475,6 +515,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputUserAnimeInput,
+		ec.unmarshalInputUserAnimesInput,
 		ec.unmarshalInputUserListInput,
 	)
 	first := true
@@ -600,26 +641,27 @@ scalar Time
 
 "RFC3339 formatted Date"
 scalar Date
-`, BuiltIn: false},
+
+scalar Int64`, BuiltIn: false},
 	{Name: "../schema.graphqls", Input: `# GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
 
-type golangTemplateAPI {
+type ListServiceAPI {
     "Version of event golang-template service"
     version: String!
 }
 
 type ApiInfo @key(fields: "name") {
-    "API Info of the golang-tempalte"
-    golangTemplateAPI: golangTemplateAPI! @goField(forceResolver: true)
+    "API Info of the ListServiceAPI"
+    golangTemplateAPI: ListServiceAPI! @goField(forceResolver: true)
     "Name of the API"
     name: String!
 }
 
 type Query {
     UserLists: [UserList!] @Authenticated
-    UserAnimes: [UserAnime!] @Authenticated
+    UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
 }
 
 type Mutation {
@@ -643,6 +685,13 @@ type Mutation {
     createdAt: String
     updatedAt: String
     deletedAt: String
+}
+
+type UserAnimePaginated {
+    page: Int!
+    limit: Int!
+    total: Int64!
+    animes: [UserAnime!]!
 }
 
 type UserList @key(fields: "id") {
@@ -686,7 +735,14 @@ enum Status {
     ONHOLD
     DROPPED
     PLANTOWATCH
-}`, BuiltIn: false},
+}
+
+input UserAnimesInput {
+    status: Status
+    page: Int!
+    limit: Int!
+}
+`, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
 	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
 	directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
@@ -859,6 +915,21 @@ func (ec *executionContext) field_Mutation_UpdateAnime_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_UserAnimes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserAnimesInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserAnimesInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimesInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -953,9 +1024,9 @@ func (ec *executionContext) _ApiInfo_golangTemplateAPI(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.GolangTemplateAPI)
+	res := resTmp.(*model.ListServiceAPI)
 	fc.Result = res
-	return ec.marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx, field.Selections, res)
+	return ec.marshalNListServiceAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐListServiceAPI(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ApiInfo_golangTemplateAPI(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -967,9 +1038,9 @@ func (ec *executionContext) fieldContext_ApiInfo_golangTemplateAPI(ctx context.C
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "version":
-				return ec.fieldContext_golangTemplateAPI_version(ctx, field)
+				return ec.fieldContext_ListServiceAPI_version(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type golangTemplateAPI", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ListServiceAPI", field.Name)
 		},
 	}
 	return fc, nil
@@ -1236,6 +1307,50 @@ func (ec *executionContext) fieldContext_Entity_findUserListByID(ctx context.Con
 	if fc.Args, err = ec.field_Entity_findUserListByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ListServiceAPI_version(ctx context.Context, field graphql.CollectedField, obj *model.ListServiceAPI) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ListServiceAPI_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ListServiceAPI_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ListServiceAPI",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -1791,7 +1906,7 @@ func (ec *executionContext) _Query_UserAnimes(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().UserAnimes(rctx)
+			return ec.resolvers.Query().UserAnimes(rctx, fc.Args["input"].(model.UserAnimesInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Authenticated == nil {
@@ -1807,10 +1922,10 @@ func (ec *executionContext) _Query_UserAnimes(ctx context.Context, field graphql
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*model.UserAnime); ok {
+		if data, ok := tmp.(*model.UserAnimePaginated); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/weeb-vip/list-service/graph/model.UserAnime`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserAnimePaginated`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1819,9 +1934,9 @@ func (ec *executionContext) _Query_UserAnimes(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.UserAnime)
+	res := resTmp.(*model.UserAnimePaginated)
 	fc.Result = res
-	return ec.marshalOUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx, field.Selections, res)
+	return ec.marshalOUserAnimePaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimePaginated(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_UserAnimes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1832,35 +1947,28 @@ func (ec *executionContext) fieldContext_Query_UserAnimes(ctx context.Context, f
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_UserAnime_id(ctx, field)
-			case "userID":
-				return ec.fieldContext_UserAnime_userID(ctx, field)
-			case "animeID":
-				return ec.fieldContext_UserAnime_animeID(ctx, field)
-			case "status":
-				return ec.fieldContext_UserAnime_status(ctx, field)
-			case "score":
-				return ec.fieldContext_UserAnime_score(ctx, field)
-			case "episodes":
-				return ec.fieldContext_UserAnime_episodes(ctx, field)
-			case "rewatching":
-				return ec.fieldContext_UserAnime_rewatching(ctx, field)
-			case "rewatchingEpisodes":
-				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
-			case "tags":
-				return ec.fieldContext_UserAnime_tags(ctx, field)
-			case "listID":
-				return ec.fieldContext_UserAnime_listID(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_UserAnime_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
-			case "deletedAt":
-				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			case "page":
+				return ec.fieldContext_UserAnimePaginated_page(ctx, field)
+			case "limit":
+				return ec.fieldContext_UserAnimePaginated_limit(ctx, field)
+			case "total":
+				return ec.fieldContext_UserAnimePaginated_total(ctx, field)
+			case "animes":
+				return ec.fieldContext_UserAnimePaginated_animes(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserAnimePaginated", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_UserAnimes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2634,6 +2742,210 @@ func (ec *executionContext) fieldContext_UserAnime_deletedAt(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimePaginated_page(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimePaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimePaginated_page(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Page, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimePaginated_page(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimePaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimePaginated_limit(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimePaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimePaginated_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimePaginated_limit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimePaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimePaginated_total(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimePaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimePaginated_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimePaginated_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimePaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimePaginated_animes(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimePaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimePaginated_animes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Animes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UserAnime)
+	fc.Result = res
+	return ec.marshalNUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimePaginated_animes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimePaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserAnime_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserAnime_userID(ctx, field)
+			case "animeID":
+				return ec.fieldContext_UserAnime_animeID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserAnime_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserAnime_score(ctx, field)
+			case "episodes":
+				return ec.fieldContext_UserAnime_episodes(ctx, field)
+			case "rewatching":
+				return ec.fieldContext_UserAnime_rewatching(ctx, field)
+			case "rewatchingEpisodes":
+				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserAnime_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserAnime_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserAnime_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
 		},
 	}
 	return fc, nil
@@ -4868,50 +5180,6 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _golangTemplateAPI_version(ctx context.Context, field graphql.CollectedField, obj *model.GolangTemplateAPI) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_golangTemplateAPI_version(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Version, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_golangTemplateAPI_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "golangTemplateAPI",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -5011,6 +5279,53 @@ func (ec *executionContext) unmarshalInputUserAnimeInput(ctx context.Context, ob
 				return it, err
 			}
 			it.ListID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserAnimesInput(ctx context.Context, obj interface{}) (model.UserAnimesInput, error) {
+	var it model.UserAnimesInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"status", "page", "limit"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Limit = data
 		}
 	}
 
@@ -5312,6 +5627,45 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 	return out
 }
 
+var listServiceAPIImplementors = []string{"ListServiceAPI"}
+
+func (ec *executionContext) _ListServiceAPI(ctx context.Context, sel ast.SelectionSet, obj *model.ListServiceAPI) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, listServiceAPIImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ListServiceAPI")
+		case "version":
+			out.Values[i] = ec._ListServiceAPI_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -5567,6 +5921,60 @@ func (ec *executionContext) _UserAnime(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._UserAnime_updatedAt(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._UserAnime_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userAnimePaginatedImplementors = []string{"UserAnimePaginated"}
+
+func (ec *executionContext) _UserAnimePaginated(ctx context.Context, sel ast.SelectionSet, obj *model.UserAnimePaginated) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userAnimePaginatedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserAnimePaginated")
+		case "page":
+			out.Values[i] = ec._UserAnimePaginated_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limit":
+			out.Values[i] = ec._UserAnimePaginated_limit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total":
+			out.Values[i] = ec._UserAnimePaginated_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "animes":
+			out.Values[i] = ec._UserAnimePaginated_animes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6011,45 +6419,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-var golangTemplateAPIImplementors = []string{"golangTemplateAPI"}
-
-func (ec *executionContext) _golangTemplateAPI(ctx context.Context, sel ast.SelectionSet, obj *model.GolangTemplateAPI) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, golangTemplateAPIImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("golangTemplateAPI")
-		case "version":
-			out.Values[i] = ec._golangTemplateAPI_version(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -6098,6 +6467,50 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt642string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt642string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNListServiceAPI2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐListServiceAPI(ctx context.Context, sel ast.SelectionSet, v model.ListServiceAPI) graphql.Marshaler {
+	return ec._ListServiceAPI(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNListServiceAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐListServiceAPI(ctx context.Context, sel ast.SelectionSet, v *model.ListServiceAPI) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ListServiceAPI(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6117,6 +6530,50 @@ func (ec *executionContext) marshalNUserAnime2githubᚗcomᚋweebᚑvipᚋlist�
 	return ec._UserAnime(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserAnime) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx context.Context, sel ast.SelectionSet, v *model.UserAnime) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6129,6 +6586,11 @@ func (ec *executionContext) marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlis
 
 func (ec *executionContext) unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx context.Context, v interface{}) (model.UserAnimeInput, error) {
 	res, err := ec.unmarshalInputUserAnimeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUserAnimesInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimesInput(ctx context.Context, v interface{}) (model.UserAnimesInput, error) {
+	res, err := ec.unmarshalInputUserAnimesInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -6514,20 +6976,6 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalNgolangTemplateAPI2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v model.GolangTemplateAPI) graphql.Marshaler {
-	return ec._golangTemplateAPI(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNgolangTemplateAPI2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐGolangTemplateAPI(ctx context.Context, sel ast.SelectionSet, v *model.GolangTemplateAPI) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._golangTemplateAPI(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6666,51 +7114,11 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOUserAnime2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserAnime) graphql.Marshaler {
+func (ec *executionContext) marshalOUserAnimePaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimePaginated(ctx context.Context, sel ast.SelectionSet, v *model.UserAnimePaginated) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
+	return ec._UserAnimePaginated(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUserList2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserListᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserList) graphql.Marshaler {

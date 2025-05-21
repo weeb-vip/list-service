@@ -7,6 +7,7 @@ import (
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 	user_anime2 "github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/services/user_anime"
+	"strconv"
 	"strings"
 )
 
@@ -93,7 +94,7 @@ func DeleteUserAnime(ctx context.Context, userAnimeService user_anime.UserAnimeS
 	return nil
 }
 
-func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl) ([]*model.UserAnime, error) {
+func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
 	// get userid from requestInfo
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
@@ -101,7 +102,14 @@ func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnime
 		return nil, errors.New("User ID is missing, unauthenticated")
 	}
 
-	userAnimeEntity, err := userAnimeService.FindByUserId(ctx, *userID)
+	var status *string
+	if input.Status != nil {
+		statuss := string(*input.Status)
+		status = &statuss
+	} else {
+		status = nil
+	}
+	userAnimeEntity, total, err := userAnimeService.FindByUserId(ctx, *userID, status, input.Page, input.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -119,5 +127,18 @@ func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnime
 		userAnimeModels = append(userAnimeModels, userAnimeModel)
 	}
 
-	return userAnimeModels, nil
+	var totalAsString string
+	if total != 0 {
+		totalAsString = strconv.Itoa(int(total))
+	} else {
+		totalAsString = "0"
+	}
+	userAnimePaginated := &model.UserAnimePaginated{
+		Page:   input.Page,
+		Limit:  input.Limit,
+		Total:  totalAsString,
+		Animes: userAnimeModels,
+	}
+
+	return userAnimePaginated, nil
 }

@@ -9,13 +9,18 @@ import (
 )
 
 type APIInfo struct {
-	// API Info of the golang-tempalte
-	GolangTemplateAPI *GolangTemplateAPI `json:"golangTemplateAPI"`
+	// API Info of the ListServiceAPI
+	GolangTemplateAPI *ListServiceAPI `json:"golangTemplateAPI"`
 	// Name of the API
 	Name string `json:"name"`
 }
 
 func (APIInfo) IsEntity() {}
+
+type ListServiceAPI struct {
+	// Version of event golang-template service
+	Version string `json:"version"`
+}
 
 type UserAnime struct {
 	ID                 string   `json:"id"`
@@ -47,6 +52,19 @@ type UserAnimeInput struct {
 	ListID             *string  `json:"listID,omitempty"`
 }
 
+type UserAnimePaginated struct {
+	Page   int          `json:"page"`
+	Limit  int          `json:"limit"`
+	Total  string       `json:"total"`
+	Animes []*UserAnime `json:"animes"`
+}
+
+type UserAnimesInput struct {
+	Status *Status `json:"status,omitempty"`
+	Page   int     `json:"page"`
+	Limit  int     `json:"limit"`
+}
+
 type UserList struct {
 	ID          string   `json:"id"`
 	UserID      string   `json:"userID"`
@@ -69,11 +87,6 @@ type UserListInput struct {
 	Type        *string  `json:"type,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
 	IsPublic    *bool    `json:"isPublic,omitempty"`
-}
-
-type GolangTemplateAPI struct {
-	// Version of event golang-template service
-	Version string `json:"version"`
 }
 
 type Status string

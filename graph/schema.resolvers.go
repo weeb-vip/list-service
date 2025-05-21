@@ -14,7 +14,7 @@ import (
 )
 
 // GolangTemplateAPI is the resolver for the GolangTemplateAPI field.
-func (r *apiInfoResolver) GolangTemplateAPI(ctx context.Context, obj *model.APIInfo) (*model.GolangTemplateAPI, error) {
+func (r *apiInfoResolver) GolangTemplateAPI(ctx context.Context, obj *model.APIInfo) (*model.ListServiceAPI, error) {
 	panic(fmt.Errorf("not implemented: GolangTemplateAPI - GolangTemplateAPI"))
 }
 
@@ -57,8 +57,8 @@ func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error
 }
 
 // UserAnimes is the resolver for the UserAnimes field.
-func (r *queryResolver) UserAnimes(ctx context.Context) ([]*model.UserAnime, error) {
-	return resolvers.GetUserAnimeByID(ctx, r.UserAnimeService)
+func (r *queryResolver) UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
+	return resolvers.GetUserAnimeByID(ctx, r.UserAnimeService, input)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.

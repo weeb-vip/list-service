@@ -14,6 +14,13 @@ type UserAnime @key(fields: "id") {
     deletedAt: String
 }
 
+type UserAnimePaginated {
+    page: Int!
+    limit: Int!
+    total: Int64!
+    animes: [UserAnime!]!
+}
+
 type UserList @key(fields: "id") {
     id: ID!
     userID: String!
@@ -55,4 +62,10 @@ enum Status {
     ONHOLD
     DROPPED
     PLANTOWATCH
+}
+
+input UserAnimesInput {
+    status: Status
+    page: Int!
+    limit: Int!
 }

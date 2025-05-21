@@ -32,10 +32,17 @@ type UserAnime struct {
 	DeletedAt          string           `json:"deleted_at"`
 }
 
+type UserAnimePaginated struct {
+	Page   int          `json:"page"`
+	Limit  int          `json:"limit"`
+	Total  int          `json:"total"`
+	Animes []*UserAnime `json:"animes"`
+}
+
 type UserAnimeServiceImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*user_anime.UserAnime, error)
 	Delete(ctx context.Context, userid string, id string) error
-	FindByUserId(ctx context.Context, userId string) ([]*user_anime.UserAnime, error)
+	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*user_anime.UserAnime, int64, error)
 }
 
 type UserAnimeService struct {
@@ -102,11 +109,11 @@ func (a *UserAnimeService) Delete(ctx context.Context, userid string, id string)
 	return nil
 }
 
-func (a *UserAnimeService) FindByUserId(ctx context.Context, userId string) ([]*user_anime.UserAnime, error) {
-	userAnimes, err := a.Repository.FindByUserId(ctx, userId)
+func (a *UserAnimeService) FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*user_anime.UserAnime, int64, error) {
+	userAnimes, total, err := a.Repository.FindByUserId(ctx, userId, status, page, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return userAnimes, nil
+	return userAnimes, total, nil
 }

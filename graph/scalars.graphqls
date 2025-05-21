@@ -4,3 +4,5 @@ scalar Time
 
 "RFC3339 formatted Date"
 scalar Date
+
+scalar Int64

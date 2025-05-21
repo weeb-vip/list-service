@@ -2,21 +2,21 @@
 #
 # https://gqlgen.com/getting-started/
 
-type golangTemplateAPI {
+type ListServiceAPI {
     "Version of event golang-template service"
     version: String!
 }
 
 type ApiInfo @key(fields: "name") {
-    "API Info of the golang-tempalte"
-    golangTemplateAPI: golangTemplateAPI! @goField(forceResolver: true)
+    "API Info of the ListServiceAPI"
+    golangTemplateAPI: ListServiceAPI! @goField(forceResolver: true)
     "Name of the API"
     name: String!
 }
 
 type Query {
     UserLists: [UserList!] @Authenticated
-    UserAnimes: [UserAnime!] @Authenticated
+    UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
 }
 
 type Mutation {

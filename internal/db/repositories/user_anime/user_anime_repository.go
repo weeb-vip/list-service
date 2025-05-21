@@ -11,7 +11,7 @@ import (
 type UserAnimeRepositoryImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error)
 	Delete(ctx context.Context, userAnime *UserAnime) error
-	FindByUserId(ctx context.Context, userId string) ([]*UserAnime, error)
+	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserAnime, int64, error)
 	FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error)
 	FindByListId(ctx context.Context, listId string) ([]*UserAnime, error)
@@ -67,13 +67,37 @@ func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) 
 	return nil
 }
 
-func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string) ([]*UserAnime, error) {
+func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserAnime, int64, error) {
 	var userAnimes []*UserAnime
-	err := a.db.DB.Where("user_id = ?", userId).Find(&userAnimes).Error
-	if err != nil {
-		return nil, err
+	var total int64
+	var err error
+	if status != nil {
+		err = a.db.DB.Where("user_id = ? AND status = ?", userId, *status).Offset((page - 1) * limit).Limit(limit).Find(&userAnimes).Error
+	} else {
+		err = a.db.DB.Where("user_id = ?", userId).Offset((page - 1) * limit).Limit(limit).Find(&userAnimes).Error
 	}
-	return userAnimes, nil
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// count based on status
+	if status != nil {
+		err = a.db.DB.Model(&UserAnime{}).Where("user_id = ? AND status = ?", userId, *status).Count(&total).Error
+	} else {
+		err = a.db.DB.Model(&UserAnime{}).Where("user_id = ?", userId).Count(&total).Error
+	}
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// check if total is 0
+	if total == 0 {
+		return nil, 0, nil
+	}
+
+	return userAnimes, total, nil
 }
 
 func (a *UserAnimeRepository) FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error) {
