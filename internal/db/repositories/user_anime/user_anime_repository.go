@@ -72,9 +72,10 @@ func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, s
 	var total int64
 	var err error
 	if status != nil {
-		err = a.db.DB.Where("user_id = ? AND status = ?", userId, *status).Offset((page - 1) * limit).Limit(limit).Find(&userAnimes).Error
+		// sort by created_at desc
+		err = a.db.DB.Where("user_id = ? AND status = ?", userId, *status).Offset((page - 1) * limit).Limit(limit).Order("created_at desc").Find(&userAnimes).Error
 	} else {
-		err = a.db.DB.Where("user_id = ?", userId).Offset((page - 1) * limit).Limit(limit).Find(&userAnimes).Error
+		err = a.db.DB.Where("user_id = ?", userId).Offset((page - 1) * limit).Limit(limit).Order("created_at desc").Find(&userAnimes).Error
 	}
 
 	if err != nil {
