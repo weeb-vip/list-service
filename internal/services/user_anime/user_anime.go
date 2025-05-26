@@ -2,7 +2,9 @@ package user_anime
 
 import (
 	"context"
+	"errors"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
+	"gorm.io/gorm"
 	"strings"
 )
 
@@ -122,6 +124,10 @@ func (a *UserAnimeService) FindByUserId(ctx context.Context, userId string, stat
 func (a *UserAnimeService) FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*user_anime.UserAnime, error) {
 	userAnime, err := a.Repository.FindByUserIdAndAnimeId(ctx, userId, animeId)
 	if err != nil {
+		// if gorm error not found just return nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
