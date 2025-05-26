@@ -58,7 +58,7 @@ func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error
 
 // UserAnimes is the resolver for the UserAnimes field.
 func (r *queryResolver) UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
-	return resolvers.GetUserAnimeByID(ctx, r.UserAnimeService, input)
+	return resolvers.GetUserAnimesByID(ctx, r.UserAnimeService, input)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.

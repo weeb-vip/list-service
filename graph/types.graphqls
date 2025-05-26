@@ -69,3 +69,8 @@ input UserAnimesInput {
     page: Int!
     limit: Int!
 }
+
+extend type Anime @key(fields: "id") {
+    id: ID! @external
+    userAnime: UserAnime @goField(forceResolver: true)
+}

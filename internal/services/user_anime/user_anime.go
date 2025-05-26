@@ -43,6 +43,7 @@ type UserAnimeServiceImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*user_anime.UserAnime, error)
 	Delete(ctx context.Context, userid string, id string) error
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*user_anime.UserAnime, int64, error)
+	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*user_anime.UserAnime, error)
 }
 
 type UserAnimeService struct {
@@ -116,4 +117,17 @@ func (a *UserAnimeService) FindByUserId(ctx context.Context, userId string, stat
 	}
 
 	return userAnimes, total, nil
+}
+
+func (a *UserAnimeService) FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*user_anime.UserAnime, error) {
+	userAnime, err := a.Repository.FindByUserIdAndAnimeId(ctx, userId, animeId)
+	if err != nil {
+		return nil, err
+	}
+
+	if userAnime == nil {
+		return nil, nil
+	}
+
+	return userAnime, nil
 }

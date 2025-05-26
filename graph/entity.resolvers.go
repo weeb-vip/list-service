@@ -12,6 +12,11 @@ import (
 	"github.com/weeb-vip/list-service/graph/model"
 )
 
+// FindAnimeByID is the resolver for the findAnimeByID field.
+func (r *entityResolver) FindAnimeByID(ctx context.Context, id string) (*model.Anime, error) {
+	panic(fmt.Errorf("not implemented: FindAnimeByID - findAnimeByID"))
+}
+
 // FindAPIInfoByName is the resolver for the findApiInfoByName field.
 func (r *entityResolver) FindAPIInfoByName(ctx context.Context, name string) (*model.APIInfo, error) {
 	panic(fmt.Errorf("not implemented: FindAPIInfoByName - findApiInfoByName"))

@@ -18,3 +18,5 @@ directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
 "helper scalar for IDE autocomplete & lint"
 directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
+
+type Anime{}

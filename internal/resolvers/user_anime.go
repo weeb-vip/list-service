@@ -94,7 +94,7 @@ func DeleteUserAnime(ctx context.Context, userAnimeService user_anime.UserAnimeS
 	return nil
 }
 
-func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
+func GetUserAnimesByID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
 	// get userid from requestInfo
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
@@ -141,4 +141,30 @@ func GetUserAnimeByID(ctx context.Context, userAnimeService user_anime.UserAnime
 	}
 
 	return userAnimePaginated, nil
+}
+
+func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, animeID string) (*model.UserAnime, error) {
+	// get userid from requestInfo
+	req := requestinfo.FromContext(ctx)
+	userID := req.UserID
+	if userID == nil {
+		return nil, errors.New("User ID is missing, unauthenticated")
+	}
+
+	userAnimeEntity, err := userAnimeService.FindByUserIdAndAnimeId(ctx, *userID, animeID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if userAnimeEntity == nil {
+		return nil, nil
+	}
+
+	userAnimeModel, err := ConvertUserAnimeToGraphql(userAnimeEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	return userAnimeModel, nil
 }

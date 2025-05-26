@@ -80,6 +80,26 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 		}()
 
 		switch typeName {
+		case "Anime":
+			resolverName, err := entityResolverNameForAnime(ctx, rep)
+			if err != nil {
+				return fmt.Errorf(`finding resolver for Entity "Anime": %w`, err)
+			}
+			switch resolverName {
+
+			case "findAnimeByID":
+				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+				if err != nil {
+					return fmt.Errorf(`unmarshalling param 0 for findAnimeByID(): %w`, err)
+				}
+				entity, err := ec.resolvers.Entity().FindAnimeByID(ctx, id0)
+				if err != nil {
+					return fmt.Errorf(`resolving Entity "Anime": %w`, err)
+				}
+
+				list[idx[i]] = entity
+				return nil
+			}
 		case "ApiInfo":
 			resolverName, err := entityResolverNameForApiInfo(ctx, rep)
 			if err != nil {
@@ -207,6 +227,23 @@ func (ec *executionContext) __resolve_entities(ctx context.Context, representati
 		g.Wait()
 		return list
 	}
+}
+
+func entityResolverNameForAnime(ctx context.Context, rep map[string]interface{}) (string, error) {
+	for {
+		var (
+			m   map[string]interface{}
+			val interface{}
+			ok  bool
+		)
+		_ = val
+		m = rep
+		if _, ok = m["id"]; !ok {
+			break
+		}
+		return "findAnimeByID", nil
+	}
+	return "", fmt.Errorf("%w for Anime", ErrTypeNotFound)
 }
 
 func entityResolverNameForApiInfo(ctx context.Context, rep map[string]interface{}) (string, error) {

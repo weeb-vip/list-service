@@ -37,6 +37,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Anime() AnimeResolver
 	ApiInfo() ApiInfoResolver
 	Entity() EntityResolver
 	Mutation() MutationResolver
@@ -49,6 +50,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Anime struct {
+		ID        func(childComplexity int) int
+		UserAnime func(childComplexity int) int
+	}
+
 	ApiInfo struct {
 		GolangTemplateAPI func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -56,6 +62,7 @@ type ComplexityRoot struct {
 
 	Entity struct {
 		FindAPIInfoByName func(childComplexity int, name string) int
+		FindAnimeByID     func(childComplexity int, id string) int
 		FindUserAnimeByID func(childComplexity int, id string) int
 		FindUserListByID  func(childComplexity int, id string) int
 	}
@@ -120,10 +127,14 @@ type ComplexityRoot struct {
 	}
 }
 
+type AnimeResolver interface {
+	UserAnime(ctx context.Context, obj *model.Anime) (*model.UserAnime, error)
+}
 type ApiInfoResolver interface {
 	GolangTemplateAPI(ctx context.Context, obj *model.APIInfo) (*model.ListServiceAPI, error)
 }
 type EntityResolver interface {
+	FindAnimeByID(ctx context.Context, id string) (*model.Anime, error)
 	FindAPIInfoByName(ctx context.Context, name string) (*model.APIInfo, error)
 	FindUserAnimeByID(ctx context.Context, id string) (*model.UserAnime, error)
 	FindUserListByID(ctx context.Context, id string) (*model.UserList, error)
@@ -155,6 +166,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Anime.id":
+		if e.complexity.Anime.ID == nil {
+			break
+		}
+
+		return e.complexity.Anime.ID(childComplexity), true
+
+	case "Anime.userAnime":
+		if e.complexity.Anime.UserAnime == nil {
+			break
+		}
+
+		return e.complexity.Anime.UserAnime(childComplexity), true
+
 	case "ApiInfo.golangTemplateAPI":
 		if e.complexity.ApiInfo.GolangTemplateAPI == nil {
 			break
@@ -180,6 +205,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Entity.FindAPIInfoByName(childComplexity, args["name"].(string)), true
+
+	case "Entity.findAnimeByID":
+		if e.complexity.Entity.FindAnimeByID == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findAnimeByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindAnimeByID(childComplexity, args["id"].(string)), true
 
 	case "Entity.findUserAnimeByID":
 		if e.complexity.Entity.FindUserAnimeByID == nil {
@@ -742,7 +779,11 @@ input UserAnimesInput {
     page: Int!
     limit: Int!
 }
-`, BuiltIn: false},
+
+extend type Anime @key(fields: "id") {
+    id: ID! @external
+    userAnime: UserAnime @goField(forceResolver: true)
+}`, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
 	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
 	directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
@@ -754,11 +795,12 @@ input UserAnimesInput {
 `, BuiltIn: true},
 	{Name: "../../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = ApiInfo | UserAnime | UserList
+union _Entity = Anime | ApiInfo | UserAnime | UserList
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-		findApiInfoByName(name: String!,): ApiInfo!
+		findAnimeByID(id: ID!,): Anime!
+	findApiInfoByName(name: String!,): ApiInfo!
 	findUserAnimeByID(id: ID!,): UserAnime!
 	findUserListByID(id: ID!,): UserList!
 
@@ -792,6 +834,21 @@ func (ec *executionContext) dir_scoped_args(ctx context.Context, rawArgs map[str
 		}
 	}
 	args["scope"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Entity_findAnimeByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -998,6 +1055,119 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Anime_id(ctx context.Context, field graphql.CollectedField, obj *model.Anime) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Anime_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Anime_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Anime",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Anime_userAnime(ctx context.Context, field graphql.CollectedField, obj *model.Anime) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Anime_userAnime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Anime().UserAnime(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnime)
+	fc.Result = res
+	return ec.marshalOUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Anime_userAnime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Anime",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserAnime_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserAnime_userID(ctx, field)
+			case "animeID":
+				return ec.fieldContext_UserAnime_animeID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserAnime_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserAnime_score(ctx, field)
+			case "episodes":
+				return ec.fieldContext_UserAnime_episodes(ctx, field)
+			case "rewatching":
+				return ec.fieldContext_UserAnime_rewatching(ctx, field)
+			case "rewatchingEpisodes":
+				return ec.fieldContext_UserAnime_rewatchingEpisodes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserAnime_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserAnime_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserAnime_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserAnime_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserAnime_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnime", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApiInfo_golangTemplateAPI(ctx context.Context, field graphql.CollectedField, obj *model.APIInfo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApiInfo_golangTemplateAPI(ctx, field)
 	if err != nil {
@@ -1086,6 +1256,67 @@ func (ec *executionContext) fieldContext_ApiInfo_name(ctx context.Context, field
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entity_findAnimeByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findAnimeByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindAnimeByID(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Anime)
+	fc.Result = res
+	return ec.marshalNAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAnime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findAnimeByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Anime_id(ctx, field)
+			case "userAnime":
+				return ec.fieldContext_Anime_userAnime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Anime", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findAnimeByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5414,6 +5645,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
+	case model.Anime:
+		return ec._Anime(ctx, sel, &obj)
+	case *model.Anime:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Anime(ctx, sel, obj)
 	case model.APIInfo:
 		return ec._ApiInfo(ctx, sel, &obj)
 	case *model.APIInfo:
@@ -5443,6 +5681,78 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var animeImplementors = []string{"Anime", "_Entity"}
+
+func (ec *executionContext) _Anime(ctx context.Context, sel ast.SelectionSet, obj *model.Anime) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, animeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Anime")
+		case "id":
+			out.Values[i] = ec._Anime_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "userAnime":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Anime_userAnime(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var apiInfoImplementors = []string{"ApiInfo", "_Entity"}
 
@@ -5538,6 +5848,28 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Entity")
+		case "findAnimeByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findAnimeByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "findApiInfoByName":
 			field := field
 
@@ -6423,6 +6755,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAnime2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAnime(ctx context.Context, sel ast.SelectionSet, v model.Anime) graphql.Marshaler {
+	return ec._Anime(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAnime(ctx context.Context, sel ast.SelectionSet, v *model.Anime) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Anime(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNApiInfo2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAPIInfo(ctx context.Context, sel ast.SelectionSet, v model.APIInfo) graphql.Marshaler {
 	return ec._ApiInfo(ctx, sel, &v)
 }
@@ -7112,6 +7458,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnime(ctx context.Context, sel ast.SelectionSet, v *model.UserAnime) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserAnime(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUserAnimePaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimePaginated(ctx context.Context, sel ast.SelectionSet, v *model.UserAnimePaginated) graphql.Marshaler {

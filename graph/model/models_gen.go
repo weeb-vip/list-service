@@ -8,6 +8,13 @@ import (
 	"strconv"
 )
 
+type Anime struct {
+	ID        string     `json:"id"`
+	UserAnime *UserAnime `json:"userAnime,omitempty"`
+}
+
+func (Anime) IsEntity() {}
+
 type APIInfo struct {
 	// API Info of the ListServiceAPI
 	GolangTemplateAPI *ListServiceAPI `json:"golangTemplateAPI"`
