@@ -14,7 +14,9 @@ import (
 
 // FindAnimeByID is the resolver for the findAnimeByID field.
 func (r *entityResolver) FindAnimeByID(ctx context.Context, id string) (*model.Anime, error) {
-	panic(fmt.Errorf("not implemented: FindAnimeByID - findAnimeByID"))
+	return &model.Anime{
+		ID: id,
+	}, nil
 }
 
 // FindAPIInfoByName is the resolver for the findApiInfoByName field.
