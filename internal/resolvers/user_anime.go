@@ -152,7 +152,7 @@ func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.User
 	userID := req.UserID
 	if userID == nil {
 		log.Error("User ID is missing, unauthenticated")
-		return nil, errors.New("User ID is missing, unauthenticated")
+		return nil, nil
 	}
 
 	log.Info("Fetching user anime for userID: ", zap.String("userID", *userID), zap.String("animeID", animeID))
