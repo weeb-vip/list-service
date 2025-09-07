@@ -4,7 +4,6 @@ DROP INDEX idx_user_anime_created_at ON user_anime;
 DROP INDEX idx_user_anime_user_id_status ON user_anime;
 DROP INDEX idx_user_anime_status ON user_anime;
 DROP INDEX idx_user_anime_list_id ON user_anime;
-DROP INDEX idx_user_anime_user_id_anime_id ON user_anime;
 DROP INDEX idx_user_anime_anime_id ON user_anime;
 DROP INDEX idx_user_anime_user_id ON user_anime;
 
