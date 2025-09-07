@@ -1,0 +1,1 @@
+UPDATE user_anime SET status = 'plantowatch' WHERE status = 'watchlist';
