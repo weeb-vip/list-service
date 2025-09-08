@@ -14,7 +14,7 @@ import (
 
 // UserAnime is the resolver for the userAnime field.
 func (r *animeResolver) UserAnime(ctx context.Context, obj *model.Anime) (*model.UserAnime, error) {
-	return resolvers.GetUserAnimeByAnimeID(ctx, r.UserAnimeService, obj.ID)
+	return resolvers.GetUserAnimeByAnimeIDWithLoader(ctx, obj.ID)
 }
 
 // Anime returns generated.AnimeResolver implementation.

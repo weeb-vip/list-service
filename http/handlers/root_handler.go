@@ -10,6 +10,7 @@ import (
 	"github.com/weeb-vip/list-service/graph/generated"
 	"github.com/weeb-vip/list-service/http/handlers/logger"
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
+	"github.com/weeb-vip/list-service/internal/dataloader"
 	"github.com/weeb-vip/list-service/internal/db"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_list"
@@ -46,5 +47,5 @@ func BuildRootHandler(conf config.Config) http.Handler {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(cfg))
 
-	return requestinfo.Handler()(logger.Handler()(srv))
+	return requestinfo.Handler()(logger.Handler()(dataloader.Middleware(userAnimeService)(srv)))
 }

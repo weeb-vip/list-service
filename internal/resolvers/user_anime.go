@@ -6,6 +6,7 @@ import (
 	"github.com/weeb-vip/list-service/graph/model"
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 	user_anime2 "github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
+	"github.com/weeb-vip/list-service/internal/dataloader"
 	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/internal/services/user_anime"
 	"go.uber.org/zap"
@@ -172,4 +173,27 @@ func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.User
 	}
 
 	return userAnimeModel, nil
+}
+
+func GetUserAnimeByAnimeIDWithLoader(ctx context.Context, animeID string) (*model.UserAnime, error) {
+	// Try to get DataLoader from context
+	if loader, ok := dataloader.GetUserAnimeLoader(ctx); ok {
+		// Get userID from context
+		req := requestinfo.FromContext(ctx)
+		if req.UserID == nil {
+			return nil, nil
+		}
+		
+		// Use DataLoader to batch the request
+		key := dataloader.UserAnimeKey{
+			UserID:  *req.UserID,
+			AnimeID: animeID,
+		}
+		
+		return loader.Load(ctx, key)
+	}
+	
+	// Fallback to individual query if DataLoader not available
+	// This should not happen in normal flow
+	return nil, errors.New("DataLoader not available in context")
 }

@@ -14,6 +14,7 @@ type UserAnimeRepositoryImpl interface {
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserAnime, int64, error)
 	FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error)
+	FindByUserIdAndAnimeIds(ctx context.Context, userId string, animeIds []string) ([]*UserAnime, error)
 	FindByListId(ctx context.Context, listId string) ([]*UserAnime, error)
 }
 
@@ -117,6 +118,15 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeId(ctx context.Context, userId
 		return nil, err
 	}
 	return &userAnime, nil
+}
+
+func (a *UserAnimeRepository) FindByUserIdAndAnimeIds(ctx context.Context, userId string, animeIds []string) ([]*UserAnime, error) {
+	var userAnimes []*UserAnime
+	err := a.db.DB.Where("user_id = ? AND anime_id IN ?", userId, animeIds).Find(&userAnimes).Error
+	if err != nil {
+		return nil, err
+	}
+	return userAnimes, nil
 }
 
 func (a *UserAnimeRepository) FindByListId(ctx context.Context, listId string) ([]*UserAnime, error) {
