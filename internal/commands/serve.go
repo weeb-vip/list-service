@@ -6,6 +6,7 @@ package commands
 import (
 	"context"
 
+	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/http"
 	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/tracing"
@@ -24,10 +25,13 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Load config first to get service name and version
+		cfg := config.LoadConfigOrPanic()
+
 		// Initialize logger
 		logger.Logger(
-			logger.WithServerName("list-service"),
-			logger.WithVersion("1.0.0"),
+			logger.WithServerName(cfg.AppConfig.APPName),
+			logger.WithVersion(cfg.AppConfig.Version),
 		)
 
 		// Initialize tracing
