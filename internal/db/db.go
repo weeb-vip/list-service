@@ -41,5 +41,11 @@ func NewDatabase(cfg config.DBConfig) *DB {
 	// This helps clean up idle connections
 	sqlDB.SetConnMaxIdleTime(90 * time.Second)
 
+	// Add tracing plugin
+	err = db.Use(&TracingPlugin{})
+	if err != nil {
+		panic("failed to register tracing plugin")
+	}
+
 	return &DB{DB: db}
 }

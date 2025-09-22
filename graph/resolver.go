@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"context"
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/internal/services/user_anime"
 	"github.com/weeb-vip/list-service/internal/services/user_list"
@@ -14,4 +15,5 @@ type Resolver struct {
 	Config           config.Config
 	UserListService  user_list.UserListServiceImpl
 	UserAnimeService user_anime.UserAnimeServiceImpl
+	Context          context.Context
 }

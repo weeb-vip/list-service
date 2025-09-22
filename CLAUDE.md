@@ -32,7 +32,7 @@ This is a Go-based GraphQL microservice for anime list management with the follo
 - **GraphQL API**: Built with gqlgen, provides federated GraphQL schema
 - **Database**: MySQL with GORM as ORM, managed migrations in `db/migrations/`
 - **Message Queue**: Apache Pulsar integration for event publishing
-- **Metrics**: Prometheus and DataDog integration via `TempMee/go-metrics-lib`
+- **Metrics**: Prometheus and DataDog integration via `weeb-vip/go-metrics-lib`
 
 ### Directory Structure
 - `cmd/` - Application entry point with Cobra CLI commands

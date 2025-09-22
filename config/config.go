@@ -12,9 +12,10 @@ type Config struct {
 }
 
 type AppConfig struct {
-	APPName string `default:"scraper-api"`
+	APPName string `default:"list-service"`
 	Port    int    `env:"PORT" default:"3000"`
 	Version string `default:"x.x.x" env:"VERSION"`
+	Env     string `default:"development" env:"ENV"`
 }
 
 type DBConfig struct {
