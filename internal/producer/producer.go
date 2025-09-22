@@ -5,7 +5,6 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/internal/logger"
-	"go.uber.org/zap"
 )
 
 type Producer[T any] interface {
@@ -24,7 +23,7 @@ func NewProducer[T any](ctx context.Context, cfg config.PulsarConfig) Producer[T
 	})
 
 	if err != nil {
-		log.Fatal("Error creating pulsar client: ", zap.String("error", err.Error()))
+		log.Fatal().Err(err).Msg("Error creating pulsar client")
 		return nil
 	}
 
@@ -41,7 +40,7 @@ func (p *ProducerImpl[T]) Send(ctx context.Context, data []byte) error {
 	})
 
 	if err != nil {
-		log.Fatal("Error creating pulsar producer: ", zap.String("error", err.Error()))
+		log.Fatal().Err(err).Msg("Error creating pulsar producer")
 		return err
 	}
 
@@ -53,7 +52,7 @@ func (p *ProducerImpl[T]) Send(ctx context.Context, data []byte) error {
 
 	_, err = producer.Send(ctx, &msg)
 	if err != nil {
-		log.Fatal("Error sending message: ", zap.String("error", err.Error()))
+		log.Fatal().Err(err).Msg("Error sending message")
 		return err
 	}
 

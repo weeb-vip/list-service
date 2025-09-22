@@ -9,7 +9,6 @@ import (
 	"github.com/weeb-vip/list-service/internal/dataloader"
 	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/internal/services/user_anime"
-	"go.uber.org/zap"
 	"strconv"
 	"strings"
 )
@@ -152,11 +151,14 @@ func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.User
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
 	if userID == nil {
-		log.Error("User ID is missing, unauthenticated")
+		log.Error().Msg("User ID is missing, unauthenticated")
 		return nil, nil
 	}
 
-	log.Info("Fetching user anime for userID: ", zap.String("userID", *userID), zap.String("animeID", animeID))
+	log.Info().
+		Str("userID", *userID).
+		Str("animeID", animeID).
+		Msg("Fetching user anime for userID")
 	userAnimeEntity, err := userAnimeService.FindByUserIdAndAnimeId(ctx, *userID, animeID)
 
 	if err != nil {

@@ -6,10 +6,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/rs/cors"
-	"github.com/rs/zerolog/log"
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/list-service/http/handlers"
 	"github.com/weeb-vip/list-service/http/middleware"
+	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/metrics"
 	"net/http"
 )
@@ -57,6 +57,7 @@ func StartServer() error {
 	cfg := config.LoadConfigOrPanic()
 	router := SetupServer(cfg)
 
+	log := logger.Get()
 	log.Info().
 		Int("port", cfg.AppConfig.Port).
 		Str("playground_url", fmt.Sprintf("http://localhost:%d/", cfg.AppConfig.Port)).
@@ -69,7 +70,8 @@ func StartServerWithContext(ctx context.Context) error {
 	cfg := config.LoadConfigOrPanic()
 	router := SetupServerWithContext(ctx, cfg)
 
-	log.Ctx(ctx).Info().
+	log := logger.FromCtx(ctx)
+	log.Info().
 		Int("port", cfg.AppConfig.Port).
 		Str("playground_url", fmt.Sprintf("http://localhost:%d/", cfg.AppConfig.Port)).
 		Msg("Starting GraphQL server")

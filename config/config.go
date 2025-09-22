@@ -40,7 +40,9 @@ type PulsarConfig struct {
 
 func LoadConfigOrPanic() Config {
 	var config = Config{}
-	configor.Load(&config, "config/config.dev.json")
+	// Try to load config file, but don't fail if it doesn't exist
+	// All important config should come from environment variables anyway
+	configor.Load(&config)
 
 	return config
 }
