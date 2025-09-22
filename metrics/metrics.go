@@ -61,3 +61,8 @@ func GetCurrentEnv() string {
 	cfg := config.LoadConfigOrPanic()
 	return cfg.AppConfig.Env
 }
+
+func GetServiceName() string {
+	cfg := config.LoadConfigOrPanic()
+	return cfg.AppConfig.APPName
+}

@@ -54,7 +54,7 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 
 		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 			Resolver: "UpsertUserList",
-			Service:  "list-service",
+			Service:  metrics.GetServiceName(),
 			Protocol: "graphql",
 			Result:   metrics_lib.Error,
 			Env:      metrics.GetCurrentEnv(),
@@ -87,7 +87,7 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 
 		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 			Resolver: "UpsertUserList",
-			Service:  "list-service",
+			Service:  metrics.GetServiceName(),
 			Protocol: "graphql",
 			Result:   metrics_lib.Error,
 			Env:      metrics.GetCurrentEnv(),
@@ -101,7 +101,7 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 
 	_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 		Resolver: "UpsertUserList",
-		Service:  "list-service",
+		Service:  metrics.GetServiceName(),
 		Protocol: "graphql",
 		Result:   metrics_lib.Success,
 		Env:      metrics.GetCurrentEnv(),
@@ -131,7 +131,7 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 
 		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 			Resolver: "GetUserListsByID",
-			Service:  "list-service",
+			Service:  metrics.GetServiceName(),
 			Protocol: "graphql",
 			Result:   metrics_lib.Error,
 			Env:      metrics.GetCurrentEnv(),
@@ -149,7 +149,7 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 
 		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 			Resolver: "GetUserListsByID",
-			Service:  "list-service",
+			Service:  metrics.GetServiceName(),
 			Protocol: "graphql",
 			Result:   metrics_lib.Error,
 			Env:      metrics.GetCurrentEnv(),
@@ -172,7 +172,7 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 
 	_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
 		Resolver: "GetUserListsByID",
-		Service:  "list-service",
+		Service:  metrics.GetServiceName(),
 		Protocol: "graphql",
 		Result:   metrics_lib.Success,
 		Env:      metrics.GetCurrentEnv(),

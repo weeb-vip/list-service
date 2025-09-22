@@ -34,7 +34,7 @@ func (a *UserListRepository) FindAll(ctx context.Context) ([]*UserList, error) {
 	err := a.db.DB.WithContext(ctx).Find(&userLists).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -44,7 +44,7 @@ func (a *UserListRepository) FindAll(ctx context.Context) ([]*UserList, error) {
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -60,7 +60,7 @@ func (a *UserListRepository) FindById(ctx context.Context, id string) (*UserList
 	err := a.db.DB.WithContext(ctx).Where("id = ?", id).First(&userList).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -70,7 +70,7 @@ func (a *UserListRepository) FindById(ctx context.Context, id string) (*UserList
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -86,7 +86,7 @@ func (a *UserListRepository) FindByUserId(ctx context.Context, userId string) ([
 	err := a.db.DB.WithContext(ctx).Where("user_id = ?", userId).Find(&userLists).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -96,7 +96,7 @@ func (a *UserListRepository) FindByUserId(ctx context.Context, userId string) ([
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -113,7 +113,7 @@ func (a *UserListRepository) Upsert(ctx context.Context, userList *UserList) (*U
 		err := a.db.DB.WithContext(ctx).Save(userList).Error
 		if err != nil {
 			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-				Service: "list-service",
+				Service: metrics.GetServiceName(),
 				Table:   "user_lists",
 				Method:  metrics_lib.DatabaseMetricMethodInsert,
 				Result:  metrics_lib.Error,
@@ -123,7 +123,7 @@ func (a *UserListRepository) Upsert(ctx context.Context, userList *UserList) (*U
 		}
 
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodInsert,
 			Result:  metrics_lib.Success,
@@ -136,7 +136,7 @@ func (a *UserListRepository) Upsert(ctx context.Context, userList *UserList) (*U
 	err := a.db.DB.WithContext(ctx).Model(userList).Where("id = ?", userList.ID).Updates(userList).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodUpdate,
 			Result:  metrics_lib.Error,
@@ -146,7 +146,7 @@ func (a *UserListRepository) Upsert(ctx context.Context, userList *UserList) (*U
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodUpdate,
 		Result:  metrics_lib.Success,
@@ -161,7 +161,7 @@ func (a *UserListRepository) Delete(ctx context.Context, userList *UserList) err
 	err := a.db.DB.WithContext(ctx).Delete(userList).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodDelete,
 			Result:  metrics_lib.Error,
@@ -171,7 +171,7 @@ func (a *UserListRepository) Delete(ctx context.Context, userList *UserList) err
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodDelete,
 		Result:  metrics_lib.Success,
@@ -187,7 +187,7 @@ func (a *UserListRepository) FindByName(ctx context.Context, name string) ([]*Us
 	err := a.db.DB.WithContext(ctx).Where("name = ?", name).Find(&userLists).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -197,7 +197,7 @@ func (a *UserListRepository) FindByName(ctx context.Context, name string) ([]*Us
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -213,7 +213,7 @@ func (a *UserListRepository) FindByNameAndUserId(ctx context.Context, name strin
 	err := a.db.DB.WithContext(ctx).Where("name = ? AND user_id = ?", name, userId).Find(&userLists).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_lists",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -223,7 +223,7 @@ func (a *UserListRepository) FindByNameAndUserId(ctx context.Context, name strin
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_lists",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,

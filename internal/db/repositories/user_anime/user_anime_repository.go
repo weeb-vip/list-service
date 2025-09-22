@@ -38,7 +38,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 	if err != nil {
 		if err.Error() != "record not found" && !errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-				Service: "list-service",
+				Service: metrics.GetServiceName(),
 				Table:   "user_anime",
 				Method:  metrics_lib.DatabaseMetricMethodSelect,
 				Result:  metrics_lib.Error,
@@ -52,7 +52,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 		err := a.db.DB.WithContext(ctx).Create(userAnime).Error
 		if err != nil {
 			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-				Service: "list-service",
+				Service: metrics.GetServiceName(),
 				Table:   "user_anime",
 				Method:  metrics_lib.DatabaseMetricMethodInsert,
 				Result:  metrics_lib.Error,
@@ -62,7 +62,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 		}
 
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodInsert,
 			Result:  metrics_lib.Success,
@@ -81,7 +81,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 	err = a.db.DB.WithContext(ctx).Save(userAnime).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodUpdate,
 			Result:  metrics_lib.Error,
@@ -91,7 +91,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodUpdate,
 		Result:  metrics_lib.Success,
@@ -106,7 +106,7 @@ func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) 
 	err := a.db.DB.WithContext(ctx).Delete(userAnime).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodDelete,
 			Result:  metrics_lib.Error,
@@ -116,7 +116,7 @@ func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) 
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodDelete,
 		Result:  metrics_lib.Success,
@@ -140,7 +140,7 @@ func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, s
 
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -158,7 +158,7 @@ func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, s
 
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -170,7 +170,7 @@ func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, s
 	// check if total is 0
 	if total == 0 {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Success,
@@ -179,7 +179,7 @@ func (a *UserAnimeRepository) FindByUserId(ctx context.Context, userId string, s
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -195,7 +195,7 @@ func (a *UserAnimeRepository) FindByAnimeId(ctx context.Context, animeId string)
 	err := a.db.DB.WithContext(ctx).Where("anime_id = ?", animeId).Find(&userAnimes).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -205,7 +205,7 @@ func (a *UserAnimeRepository) FindByAnimeId(ctx context.Context, animeId string)
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -221,7 +221,7 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeId(ctx context.Context, userId
 	err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id = ?", userId, animeId).First(&userAnime).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -231,7 +231,7 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeId(ctx context.Context, userId
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -247,7 +247,7 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeIds(ctx context.Context, userI
 	err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id IN ?", userId, animeIds).Find(&userAnimes).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -257,7 +257,7 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeIds(ctx context.Context, userI
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
@@ -273,7 +273,7 @@ func (a *UserAnimeRepository) FindByListId(ctx context.Context, listId string) (
 	err := a.db.DB.WithContext(ctx).Where("list_id = ?", listId).Find(&userAnimes).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: "list-service",
+			Service: metrics.GetServiceName(),
 			Table:   "user_anime",
 			Method:  metrics_lib.DatabaseMetricMethodSelect,
 			Result:  metrics_lib.Error,
@@ -283,7 +283,7 @@ func (a *UserAnimeRepository) FindByListId(ctx context.Context, listId string) (
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-		Service: "list-service",
+		Service: metrics.GetServiceName(),
 		Table:   "user_anime",
 		Method:  metrics_lib.DatabaseMetricMethodSelect,
 		Result:  metrics_lib.Success,
