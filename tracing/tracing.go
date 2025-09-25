@@ -7,6 +7,7 @@ import (
 	"github.com/weeb-vip/list-service/config"
 	"github.com/weeb-vip/go-tracing-lib/providers"
 	"github.com/weeb-vip/go-tracing-lib/tracing"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -73,4 +74,16 @@ func GetTracer(ctx context.Context) trace.Tracer {
 // GetServiceName returns the service name from the context
 func GetServiceName(ctx context.Context) string {
 	return tracing.GetServiceName(ctx)
+}
+
+// GetEnvironmentAttribute returns the environment as an OpenTelemetry attribute
+func GetEnvironmentAttribute() trace.SpanStartOption {
+	cfg := config.LoadConfigOrPanic()
+	return trace.WithAttributes(attribute.String("environment", cfg.AppConfig.Env))
+}
+
+// GetEnvironmentTag returns the environment for DataDog/Jaeger tags
+func GetEnvironmentTag() string {
+	cfg := config.LoadConfigOrPanic()
+	return cfg.AppConfig.Env
 }

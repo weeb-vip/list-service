@@ -106,6 +106,7 @@ func (tp *TracingPlugin) before(db *gorm.DB, operation string) {
 			attribute.String("db.table", db.Statement.Table),
 		),
 		trace.WithSpanKind(trace.SpanKindClient),
+		tracing.GetEnvironmentAttribute(),
 	)
 
 	// Update the statement context to include the new span

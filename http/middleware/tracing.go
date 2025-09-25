@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/rs/zerolog/log"
+	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
@@ -33,6 +33,7 @@ func TracingMiddleware() func(http.Handler) http.Handler {
 					attribute.String("user_agent.original", r.UserAgent()),
 				),
 				trace.WithSpanKind(trace.SpanKindServer),
+				tracing.GetEnvironmentAttribute(),
 			)
 			defer span.End()
 
@@ -46,7 +47,8 @@ func TracingMiddleware() func(http.Handler) http.Handler {
 			r = r.WithContext(ctx)
 
 			// Log the incoming request with trace context
-			log.Ctx(ctx).Info().
+			log := logger.FromCtx(ctx)
+			log.Info().
 				Str("method", r.Method).
 				Str("path", r.URL.Path).
 				Str("remote_addr", r.RemoteAddr).
@@ -62,7 +64,7 @@ func TracingMiddleware() func(http.Handler) http.Handler {
 			)
 
 			// Log the response with trace context
-			log.Ctx(ctx).Info().
+			log.Info().
 				Str("method", r.Method).
 				Str("path", r.URL.Path).
 				Int("status_code", wrapped.statusCode).

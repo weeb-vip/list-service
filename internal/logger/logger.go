@@ -29,6 +29,7 @@ func Logger(opts ...Option) {
 		globalLogger = log.With().
 			Str("service", config.ServiceName).
 			Str("version", config.ServiceVersion).
+			Str("environment", config.Environment).
 			Logger()
 	})
 }
@@ -85,6 +86,7 @@ func WithContext(logger zerolog.Logger, ctx context.Context) context.Context {
 type Config struct {
 	ServiceName    string
 	ServiceVersion string
+	Environment    string
 }
 
 // Option configures the logger
@@ -101,5 +103,12 @@ func WithServerName(name string) Option {
 func WithVersion(version string) Option {
 	return func(c *Config) {
 		c.ServiceVersion = version
+	}
+}
+
+// WithEnvironment sets the environment
+func WithEnvironment(env string) Option {
+	return func(c *Config) {
+		c.Environment = env
 	}
 }

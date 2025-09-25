@@ -32,6 +32,7 @@ to quickly create a Cobra application.`,
 		logger.Logger(
 			logger.WithServerName(cfg.AppConfig.APPName),
 			logger.WithVersion(cfg.AppConfig.Version),
+			logger.WithEnvironment(cfg.AppConfig.Env),
 		)
 
 		// Initialize tracing
