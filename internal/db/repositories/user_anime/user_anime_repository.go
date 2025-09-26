@@ -243,17 +243,47 @@ func (a *UserAnimeRepository) FindByUserIdAndAnimeId(ctx context.Context, userId
 func (a *UserAnimeRepository) FindByUserIdAndAnimeIds(ctx context.Context, userId string, animeIds []string) ([]*UserAnime, error) {
 	startTime := time.Now()
 
+	if len(animeIds) == 0 {
+		return []*UserAnime{}, nil
+	}
+
 	var userAnimes []*UserAnime
-	err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id IN ?", userId, animeIds).Find(&userAnimes).Error
-	if err != nil {
-		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
-			Service: metrics.GetServiceName(),
-			Table:   "user_anime",
-			Method:  metrics_lib.DatabaseMetricMethodSelect,
-			Result:  metrics_lib.Error,
-			Env:     metrics.GetCurrentEnv(),
-		})
-		return nil, err
+
+	// For large IN clauses (>500 items), process in batches to avoid query plan instability
+	const batchSize = 500
+	if len(animeIds) > batchSize {
+		for i := 0; i < len(animeIds); i += batchSize {
+			end := i + batchSize
+			if end > len(animeIds) {
+				end = len(animeIds)
+			}
+
+			var batch []*UserAnime
+			err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id IN ?", userId, animeIds[i:end]).Find(&batch).Error
+			if err != nil {
+				_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
+					Service: metrics.GetServiceName(),
+					Table:   "user_anime",
+					Method:  metrics_lib.DatabaseMetricMethodSelect,
+					Result:  metrics_lib.Error,
+					Env:     metrics.GetCurrentEnv(),
+				})
+				return nil, err
+			}
+			userAnimes = append(userAnimes, batch...)
+		}
+	} else {
+		err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id IN ?", userId, animeIds).Find(&userAnimes).Error
+		if err != nil {
+			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
+				Service: metrics.GetServiceName(),
+				Table:   "user_anime",
+				Method:  metrics_lib.DatabaseMetricMethodSelect,
+				Result:  metrics_lib.Error,
+				Env:     metrics.GetCurrentEnv(),
+			})
+			return nil, err
+		}
 	}
 
 	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
