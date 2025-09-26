@@ -12,6 +12,26 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// SelectiveGzipMiddleware handles both request decompression and response compression
+// but excludes specific paths like /metrics from compression
+func SelectiveGzipMiddleware(excludePaths ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if this path should be excluded from compression
+			for _, path := range excludePaths {
+				if r.URL.Path == path {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Apply regular gzip middleware
+			gzipHandler := GzipMiddleware()
+			gzipHandler(next).ServeHTTP(w, r)
+		})
+	}
+}
+
 // GzipMiddleware handles both request decompression and response compression
 func GzipMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
