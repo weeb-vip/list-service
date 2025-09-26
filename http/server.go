@@ -18,6 +18,9 @@ func SetupServer(cfg config.Config) *chi.Mux {
 
 	router := chi.NewRouter()
 
+	// Add gzip compression middleware
+	router.Use(middleware.GzipMiddleware())
+
 	router.Use(cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:8081", "http://localhost:3000"},
 		AllowCredentials: true,
@@ -35,6 +38,9 @@ func SetupServer(cfg config.Config) *chi.Mux {
 func SetupServerWithContext(ctx context.Context, cfg config.Config) *chi.Mux {
 
 	router := chi.NewRouter()
+
+	// Add gzip compression middleware
+	router.Use(middleware.GzipMiddleware())
 
 	// Add tracing middleware to all routes
 	router.Use(middleware.TracingMiddleware())
