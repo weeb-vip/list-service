@@ -3,12 +3,18 @@ package resolvers
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/weeb-vip/list-service/graph/model"
 	"github.com/weeb-vip/list-service/http/handlers/requestinfo"
 	user_anime2 "github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/dataloader"
 	"github.com/weeb-vip/list-service/internal/logger"
 	"github.com/weeb-vip/list-service/internal/services/user_anime"
+	"github.com/weeb-vip/list-service/metrics"
+	"github.com/weeb-vip/list-service/tracing"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"strconv"
 	"strings"
 )
@@ -45,12 +51,34 @@ func ConvertUserAnimeToGraphql(userAnimeEntity *user_anime2.UserAnime) (*model.U
 }
 
 func UpsertUserAnime(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, userAnime model.UserAnimeInput) (*model.UserAnime, error) {
+	// Start tracing span
+	tracer := tracing.GetTracer(ctx)
+	ctx, span := tracer.Start(ctx, "UpsertUserAnime")
+	span.SetAttributes(
+		attribute.String("resolver.name", "UpsertUserAnime"),
+		attribute.String("anime.id", userAnime.AnimeID),
+	)
+	defer span.End()
+
+	startTime := time.Now()
+
 	// get userid from requestInfo
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
 	if userID == nil {
+		span.RecordError(errors.New("User ID is missing, unauthenticated"))
+		span.SetStatus(codes.Error, "User ID is missing, unauthenticated")
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"UpsertUserAnime",
+			metrics.Error,
+		)
+
 		return nil, errors.New("User ID is missing, unauthenticated")
 	}
+
+	span.SetAttributes(attribute.String("user.id", *userID))
 	var status *user_anime.UserAnimeStatus
 	if userAnime.Status != nil {
 		statuss := user_anime.UserAnimeStatus(*userAnime.Status)
@@ -74,8 +102,26 @@ func UpsertUserAnime(ctx context.Context, userAnimeService user_anime.UserAnimeS
 
 	createdUserAnime, err := userAnimeService.Upsert(ctx, userAnimeEntity)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"UpsertUserAnime",
+			metrics.Error,
+		)
+
 		return nil, err
 	}
+
+	span.SetStatus(codes.Ok, "")
+	span.SetAttributes(attribute.String("user_anime.id", createdUserAnime.ID))
+
+	metrics.GetAppMetrics().ResolverMetric(
+		float64(time.Since(startTime).Milliseconds()),
+		"UpsertUserAnime",
+		metrics.Success,
+	)
 
 	return ConvertUserAnimeToGraphql(createdUserAnime)
 }
@@ -97,12 +143,35 @@ func DeleteUserAnime(ctx context.Context, userAnimeService user_anime.UserAnimeS
 }
 
 func GetUserAnimesByID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
+	// Start tracing span
+	tracer := tracing.GetTracer(ctx)
+	ctx, span := tracer.Start(ctx, "GetUserAnimesByID")
+	span.SetAttributes(
+		attribute.String("resolver.name", "GetUserAnimesByID"),
+		attribute.Int("page", input.Page),
+		attribute.Int("limit", input.Limit),
+	)
+	defer span.End()
+
+	startTime := time.Now()
+
 	// get userid from requestInfo
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
 	if userID == nil {
+		span.RecordError(errors.New("User ID is missing, unauthenticated"))
+		span.SetStatus(codes.Error, "User ID is missing, unauthenticated")
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserAnimesByID",
+			metrics.Error,
+		)
+
 		return nil, errors.New("User ID is missing, unauthenticated")
 	}
+
+	span.SetAttributes(attribute.String("user.id", *userID))
 
 	var status *string
 	if input.Status != nil {
@@ -113,6 +182,15 @@ func GetUserAnimesByID(ctx context.Context, userAnimeService user_anime.UserAnim
 	}
 	userAnimeEntity, total, err := userAnimeService.FindByUserId(ctx, *userID, status, input.Page, input.Limit)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserAnimesByID",
+			metrics.Error,
+		)
+
 		return nil, err
 	}
 
@@ -142,18 +220,48 @@ func GetUserAnimesByID(ctx context.Context, userAnimeService user_anime.UserAnim
 		Animes: userAnimeModels,
 	}
 
+	span.SetStatus(codes.Ok, "")
+	span.SetAttributes(attribute.Int("user_anime.count", len(userAnimeModels)))
+
+	metrics.GetAppMetrics().ResolverMetric(
+		float64(time.Since(startTime).Milliseconds()),
+		"GetUserAnimesByID",
+		metrics.Success,
+	)
+
 	return userAnimePaginated, nil
 }
 
 func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, animeID string) (*model.UserAnime, error) {
+	// Start tracing span
+	tracer := tracing.GetTracer(ctx)
+	ctx, span := tracer.Start(ctx, "GetUserAnimeByAnimeID")
+	span.SetAttributes(
+		attribute.String("resolver.name", "GetUserAnimeByAnimeID"),
+		attribute.String("anime.id", animeID),
+	)
+	defer span.End()
+
+	startTime := time.Now()
+
 	log := logger.FromCtx(ctx)
 	// get userid from requestInfo
 	req := requestinfo.FromContext(ctx)
 	userID := req.UserID
 	if userID == nil {
 		log.Error().Msg("User ID is missing, unauthenticated")
+		span.SetStatus(codes.Error, "User ID is missing, unauthenticated")
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserAnimeByAnimeID",
+			metrics.Error,
+		)
+
 		return nil, nil
 	}
+
+	span.SetAttributes(attribute.String("user.id", *userID))
 
 	log.Info().
 		Str("userID", *userID).
@@ -162,6 +270,15 @@ func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.User
 	userAnimeEntity, err := userAnimeService.FindByUserIdAndAnimeId(ctx, *userID, animeID)
 
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserAnimeByAnimeID",
+			metrics.Error,
+		)
+
 		return nil, err
 	}
 
@@ -173,6 +290,17 @@ func GetUserAnimeByAnimeID(ctx context.Context, userAnimeService user_anime.User
 	if err != nil {
 		return nil, err
 	}
+
+	span.SetStatus(codes.Ok, "")
+	if userAnimeEntity != nil {
+		span.SetAttributes(attribute.String("user_anime.id", userAnimeEntity.ID))
+	}
+
+	metrics.GetAppMetrics().ResolverMetric(
+		float64(time.Since(startTime).Milliseconds()),
+		"GetUserAnimeByAnimeID",
+		metrics.Success,
+	)
 
 	return userAnimeModel, nil
 }

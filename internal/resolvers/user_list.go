@@ -11,7 +11,6 @@ import (
 	"github.com/weeb-vip/list-service/internal/services/user_list"
 	"github.com/weeb-vip/list-service/metrics"
 	"github.com/weeb-vip/list-service/tracing"
-	metrics_lib "github.com/weeb-vip/go-metrics-lib"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"strings"
@@ -52,13 +51,11 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 		span.RecordError(errors.New("User ID is missing, unauthenticated"))
 		span.SetStatus(codes.Error, "User ID is missing, unauthenticated")
 
-		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-			Resolver: "UpsertUserList",
-			Service:  metrics.GetServiceName(),
-			Protocol: "graphql",
-			Result:   metrics_lib.Error,
-			Env:      metrics.GetCurrentEnv(),
-		})
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"UpsertUserList",
+			metrics.Error,
+		)
 
 		return nil, errors.New("User ID is missing, unauthenticated")
 	}
@@ -85,13 +82,11 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
-		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-			Resolver: "UpsertUserList",
-			Service:  metrics.GetServiceName(),
-			Protocol: "graphql",
-			Result:   metrics_lib.Error,
-			Env:      metrics.GetCurrentEnv(),
-		})
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"UpsertUserList",
+			metrics.Error,
+		)
 
 		return nil, err
 	}
@@ -99,13 +94,11 @@ func UpsertUserList(ctx context.Context, userListService user_list.UserListServi
 	span.SetStatus(codes.Ok, "")
 	span.SetAttributes(attribute.String("user_list.id", createdUserList.ID))
 
-	_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-		Resolver: "UpsertUserList",
-		Service:  metrics.GetServiceName(),
-		Protocol: "graphql",
-		Result:   metrics_lib.Success,
-		Env:      metrics.GetCurrentEnv(),
-	})
+	metrics.GetAppMetrics().ResolverMetric(
+		float64(time.Since(startTime).Milliseconds()),
+		"UpsertUserList",
+		metrics.Success,
+	)
 
 	// Convert user_list.UserList back to model.UserList
 	return ConvertUserListToGraphql(createdUserList)
@@ -129,13 +122,11 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 		span.RecordError(errors.New("User ID is missing, unauthenticated"))
 		span.SetStatus(codes.Error, "User ID is missing, unauthenticated")
 
-		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-			Resolver: "GetUserListsByID",
-			Service:  metrics.GetServiceName(),
-			Protocol: "graphql",
-			Result:   metrics_lib.Error,
-			Env:      metrics.GetCurrentEnv(),
-		})
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserListsByID",
+			metrics.Error,
+		)
 
 		return nil, errors.New("User ID is missing, unauthenticated")
 	}
@@ -147,13 +138,11 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
-		_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-			Resolver: "GetUserListsByID",
-			Service:  metrics.GetServiceName(),
-			Protocol: "graphql",
-			Result:   metrics_lib.Error,
-			Env:      metrics.GetCurrentEnv(),
-		})
+		metrics.GetAppMetrics().ResolverMetric(
+			float64(time.Since(startTime).Milliseconds()),
+			"GetUserListsByID",
+			metrics.Error,
+		)
 
 		return nil, err
 	}
@@ -170,13 +159,11 @@ func GetUserListsByID(ctx context.Context, userListService user_list.UserListSer
 		userListModels[i] = userListModel
 	}
 
-	_ = metrics.NewMetricsInstance().ResolverMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.ResolverMetricLabels{
-		Resolver: "GetUserListsByID",
-		Service:  metrics.GetServiceName(),
-		Protocol: "graphql",
-		Result:   metrics_lib.Success,
-		Env:      metrics.GetCurrentEnv(),
-	})
+	metrics.GetAppMetrics().ResolverMetric(
+		float64(time.Since(startTime).Milliseconds()),
+		"GetUserListsByID",
+		metrics.Success,
+	)
 
 	return userListModels, nil
 }
