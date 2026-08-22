@@ -12,12 +12,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'db/migrations/postgres/**'
+      - 'db/migrations/**'
       - '.github/workflows/migrations.yaml'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'db/migrations/postgres/**'
+      - 'db/migrations/**'
       - '.github/workflows/migrations.yaml'
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
 
     env:
       DB_URL: postgres://postgres:postgres@localhost:5432/svc_test?sslmode=disable
-      MIGRATIONS: db/migrations/postgres
+      MIGRATIONS: db/migrations
 
     steps:
       - uses: actions/checkout@v4

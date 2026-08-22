@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	//go:embed migrations/postgres/*.sql
+	//go:embed migrations/*.sql
 	migrations embed.FS
 )
 
@@ -24,7 +24,7 @@ type driver struct {
 }
 
 func (d *driver) Open(rawURL string) (source.Driver, error) {
-	err := d.PartialDriver.Init(http.FS(migrations), "migrations/postgres")
+	err := d.PartialDriver.Init(http.FS(migrations), "migrations")
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func getMigration() (*migrate.Migrate, error) {
 		MigrationsTable: cfg.DBConfig.MigrationTableName,
 	})
 	// log files in migrations folder
-	files, err := migrations.ReadDir("migrations/postgres")
+	files, err := migrations.ReadDir("migrations")
 	if err != nil {
 		return nil, err
 	}
