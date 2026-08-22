@@ -2,9 +2,9 @@ package db
 
 import (
 	"embed"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/golang-migrate/migrate/v4/source/httpfs"
@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	//go:embed migrations/*.sql
+	//go:embed migrations/postgres/*.sql
 	migrations embed.FS
 )
 
@@ -24,7 +24,7 @@ type driver struct {
 }
 
 func (d *driver) Open(rawURL string) (source.Driver, error) {
-	err := d.PartialDriver.Init(http.FS(migrations), "migrations")
+	err := d.PartialDriver.Init(http.FS(migrations), "migrations/postgres")
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +38,11 @@ func getMigration() (*migrate.Migrate, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbdriver, err := mysql.WithInstance(sqldb, &mysql.Config{
+	dbdriver, err := postgres.WithInstance(sqldb, &postgres.Config{
 		MigrationsTable: cfg.DBConfig.MigrationTableName,
 	})
 	// log files in migrations folder
-	files, err := migrations.ReadDir("migrations")
+	files, err := migrations.ReadDir("migrations/postgres")
 	if err != nil {
 		return nil, err
 	}
