@@ -25,21 +25,25 @@ func NewDatabase(cfg config.DBConfig) *DB {
 		panic("failed to get database connection")
 	}
 
-	// Set maximum number of open connections
-	// This prevents too many connections to the database
-	sqlDB.SetMaxOpenConns(25)
+	// The pool is sized to be reused rather than refilled.
+	//
+	// MaxIdleConns matches MaxOpenConns deliberately: Go only retains up to
+	// MaxIdleConns, so anything opened above it is closed again the moment the
+	// query finishes. The previous settings kept far fewer idle than they were
+	// willing to open, which meant most connections were built per-query --
+	// TCP, TLS and auth each time, against RDS over the internet.
+	//
+	// 5 is small because the database is small. db.t4g.micro allows 79
+	// connections in total, and roughly 36 pods share them; a warm pool of 5
+	// serves more traffic than a churning pool of 25 while claiming a fraction
+	// of that budget.
+	sqlDB.SetMaxOpenConns(5)
+	sqlDB.SetMaxIdleConns(5)
 
-	// Set maximum number of idle connections
-	// This maintains a pool of reusable connections
-	sqlDB.SetMaxIdleConns(10)
-
-	// Set maximum lifetime of a connection
-	// MySQL wait_timeout is typically 8 hours, so we set this lower
-	sqlDB.SetConnMaxLifetime(5 * time.Minute)
-
-	// Set maximum idle time for a connection
-	// This helps clean up idle connections
-	sqlDB.SetConnMaxIdleTime(90 * time.Second)
+	// Long enough that connections survive quiet periods and get reused, short
+	// enough that a failover or DNS change is picked up without a restart.
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	// Add tracing plugin
 	err = db.Use(&TracingPlugin{})
