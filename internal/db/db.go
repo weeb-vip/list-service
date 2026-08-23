@@ -40,10 +40,26 @@ func NewDatabase(cfg config.DBConfig) *DB {
 	sqlDB.SetMaxOpenConns(5)
 	sqlDB.SetMaxIdleConns(5)
 
-	// Long enough that connections survive quiet periods and get reused, short
-	// enough that a failover or DNS change is picked up without a restart.
-	sqlDB.SetConnMaxLifetime(30 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	// Connections are kept for hours because building one is expensive here.
+	//
+	// Measured against the production RDS instance: opening a connection costs
+	// 6-52 seconds, while queries on an already-open connection cost about 7ms.
+	// The gap is TLS and SCRAM authentication, both CPU-bound, on a db.t4g.micro
+	// whose CPU credit balance sits at zero.
+	//
+	// The old 10 minute idle timeout emptied the pool during any quiet period,
+	// so the first request after a lull paid that cost. This service showed the
+	// same cold-start curve as anime-api -- 8.4s falling to 0.22s over
+	// successive calls -- because the bottleneck is the shared database, not
+	// anything either service does.
+	//
+	// It also preserves the statement cache: pgx v5 caches prepared statements
+	// per connection, so closing one discards its plans as well.
+	//
+	// Four hours rather than never, so a failover or DNS change is still picked
+	// up without needing a restart.
+	sqlDB.SetConnMaxLifetime(4 * time.Hour)
+	sqlDB.SetConnMaxIdleTime(1 * time.Hour)
 
 	// Add tracing plugin
 	err = db.Use(&TracingPlugin{})
