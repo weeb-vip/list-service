@@ -1,0 +1,13 @@
+-- Drops idx_user_anime_user_id on user_anime (user_id).
+--
+-- Covered twice over: user_id is the leading column of both
+-- idx_user_anime_user_id_status (user_id, status) and
+-- idx_user_anime_user_id_anime_id (user_id, anime_id), either of which serves
+-- any predicate this index could. It had a single scan against the composite's
+-- 108, so the planner had already stopped choosing it.
+--
+-- CONCURRENTLY, and alone in this file. golang-migrate passes the whole file to
+-- one Exec, and Postgres treats a multi-statement simple query as an implicit
+-- transaction, where this is rejected with "DROP INDEX CONCURRENTLY cannot run
+-- inside a transaction block". One statement per file keeps it outside one.
+DROP INDEX CONCURRENTLY IF EXISTS idx_user_anime_user_id;
