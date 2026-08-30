@@ -18,6 +18,8 @@ type Query {
     UserLists: [UserList!] @Authenticated
     UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
+    WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
+    ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
 
 type Mutation {
@@ -29,4 +31,8 @@ type Mutation {
     AddWork(input: UserWorkInput!): UserWork! @Authenticated
     UpdateWork(input: UserWorkInput!): UserWork! @Authenticated
     DeleteWork(id: ID!): Boolean! @Authenticated
+    MarkEpisodeWatched(input: MarkEpisodeInput!): WatchedEpisode! @Authenticated
+    UnmarkEpisodeWatched(input: MarkEpisodeInput!): Boolean! @Authenticated
+    MarkChapterRead(input: MarkChapterInput!): ReadChapter! @Authenticated
+    UnmarkChapterRead(input: MarkChapterInput!): Boolean! @Authenticated
 }

@@ -140,3 +140,38 @@ extend type Work @key(fields: "id") {
     id: ID! @external
     userWork: UserWork @goField(forceResolver: true)
 }
+
+"""
+One episode a viewer has finished.
+
+Identified by number rather than by the episode record's id: the scraper
+sometimes clears an anime's episodes and reinserts them with new ids, and
+history pointing at those would be lost on every re-scrape.
+"""
+type WatchedEpisode {
+    id: ID!
+    animeID: String!
+    episodeNumber: Int!
+    watchedAt: String
+}
+
+"One chapter a reader has finished. Numbered, because works have no chapter records at all."
+type ReadChapter {
+    id: ID!
+    workID: String!
+    chapterNumber: Int!
+    readAt: String
+}
+
+input MarkEpisodeInput {
+    animeID: String!
+    episodeNumber: Int!
+    "Defaults to now. Supplied when backfilling something watched earlier."
+    watchedAt: String
+}
+
+input MarkChapterInput {
+    workID: String!
+    chapterNumber: Int!
+    readAt: String
+}

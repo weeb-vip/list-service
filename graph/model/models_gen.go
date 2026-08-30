@@ -29,6 +29,27 @@ type ListServiceAPI struct {
 	Version string `json:"version"`
 }
 
+type MarkChapterInput struct {
+	WorkID        string  `json:"workID"`
+	ChapterNumber int     `json:"chapterNumber"`
+	ReadAt        *string `json:"readAt,omitempty"`
+}
+
+type MarkEpisodeInput struct {
+	AnimeID       string `json:"animeID"`
+	EpisodeNumber int    `json:"episodeNumber"`
+	// Defaults to now. Supplied when backfilling something watched earlier.
+	WatchedAt *string `json:"watchedAt,omitempty"`
+}
+
+// One chapter a reader has finished. Numbered, because works have no chapter records at all.
+type ReadChapter struct {
+	ID            string  `json:"id"`
+	WorkID        string  `json:"workID"`
+	ChapterNumber int     `json:"chapterNumber"`
+	ReadAt        *string `json:"readAt,omitempty"`
+}
+
 type UserAnime struct {
 	ID                 string   `json:"id"`
 	UserID             string   `json:"userID"`
@@ -140,6 +161,18 @@ type UserWorksInput struct {
 	Status *WorkStatus `json:"status,omitempty"`
 	Page   int         `json:"page"`
 	Limit  int         `json:"limit"`
+}
+
+// One episode a viewer has finished.
+//
+// Identified by number rather than by the episode record's id: the scraper
+// sometimes clears an anime's episodes and reinserts them with new ids, and
+// history pointing at those would be lost on every re-scrape.
+type WatchedEpisode struct {
+	ID            string  `json:"id"`
+	AnimeID       string  `json:"animeID"`
+	EpisodeNumber int     `json:"episodeNumber"`
+	WatchedAt     *string `json:"watchedAt,omitempty"`
 }
 
 type Work struct {

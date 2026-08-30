@@ -72,6 +72,34 @@ func (r *mutationResolver) DeleteWork(ctx context.Context, id string) (bool, err
 	return true, nil
 }
 
+// MarkEpisodeWatched is the resolver for the MarkEpisodeWatched field.
+func (r *mutationResolver) MarkEpisodeWatched(ctx context.Context, input model.MarkEpisodeInput) (*model.WatchedEpisode, error) {
+	return resolvers.MarkEpisodeWatched(ctx, r.UserProgressService, input)
+}
+
+// UnmarkEpisodeWatched is the resolver for the UnmarkEpisodeWatched field.
+func (r *mutationResolver) UnmarkEpisodeWatched(ctx context.Context, input model.MarkEpisodeInput) (bool, error) {
+	if err := resolvers.UnmarkEpisodeWatched(ctx, r.UserProgressService, input); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// MarkChapterRead is the resolver for the MarkChapterRead field.
+func (r *mutationResolver) MarkChapterRead(ctx context.Context, input model.MarkChapterInput) (*model.ReadChapter, error) {
+	return resolvers.MarkChapterRead(ctx, r.UserProgressService, input)
+}
+
+// UnmarkChapterRead is the resolver for the UnmarkChapterRead field.
+func (r *mutationResolver) UnmarkChapterRead(ctx context.Context, input model.MarkChapterInput) (bool, error) {
+	if err := resolvers.UnmarkChapterRead(ctx, r.UserProgressService, input); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // UserLists is the resolver for the UserLists field.
 func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error) {
 	return resolvers.GetUserListsByID(ctx, r.UserListService)
@@ -85,6 +113,16 @@ func (r *queryResolver) UserAnimes(ctx context.Context, input model.UserAnimesIn
 // UserWorks is the resolver for the UserWorks field.
 func (r *queryResolver) UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error) {
 	return resolvers.UserWorks(ctx, r.UserWorkService, input)
+}
+
+// WatchedEpisodes is the resolver for the WatchedEpisodes field.
+func (r *queryResolver) WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error) {
+	return resolvers.WatchedEpisodes(ctx, r.UserProgressService, animeID)
+}
+
+// ReadChapters is the resolver for the ReadChapters field.
+func (r *queryResolver) ReadChapters(ctx context.Context, workID string) ([]*model.ReadChapter, error) {
+	return resolvers.ReadChapters(ctx, r.UserProgressService, workID)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.

@@ -71,16 +71,16 @@ jobs:
             SELECT count(*) INTO n FROM information_schema.tables
               WHERE table_schema='public' AND table_type='BASE TABLE'
                 AND table_name <> 'schema_migrations';
-            -- user_list, user_anime, user_work.
-            IF n <> 3 THEN
-              RAISE EXCEPTION 'expected 3 tables, found %', n;
+            -- user_list, user_anime, user_work, and the two progress tables.
+            IF n <> 5 THEN
+              RAISE EXCEPTION 'expected 5 tables, found %', n;
             END IF;
 
             SELECT count(*) INTO n FROM information_schema.columns
               WHERE table_schema='public' AND table_name <> 'schema_migrations';
-            -- user_list 9 + user_anime 13 + user_work 12.
-            IF n <> 34 THEN
-              RAISE EXCEPTION 'expected 34 columns, found %', n;
+            -- 9 + 13 + 12 + user_anime_episode 8 + user_work_chapter 8.
+            IF n <> 50 THEN
+              RAISE EXCEPTION 'expected 50 columns, found %', n;
             END IF;
           END $$;
           SQL
