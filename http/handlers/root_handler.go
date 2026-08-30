@@ -15,9 +15,11 @@ import (
 	"github.com/weeb-vip/list-service/internal/db"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_list"
+	"github.com/weeb-vip/list-service/internal/db/repositories/user_work"
 	"github.com/weeb-vip/list-service/internal/directives"
 	user_anime2 "github.com/weeb-vip/list-service/internal/services/user_anime"
 	user_list2 "github.com/weeb-vip/list-service/internal/services/user_list"
+	user_work2 "github.com/weeb-vip/list-service/internal/services/user_work"
 	"net/http"
 )
 
@@ -27,11 +29,14 @@ func BuildRootHandler(conf config.Config) http.Handler {
 	userListService := user_list2.NewUserListService(userListRepository)
 	userAnimeRepository := user_anime.NewUserAnimeRepository(database)
 	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
+	userWorkRepository := user_work.NewUserWorkRepository(database)
+	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
 
 	resolvers := &graph.Resolver{
 		Config:           conf,
 		UserListService:  userListService,
 		UserAnimeService: userAnimeService,
+		UserWorkService:  userWorkService,
 	}
 
 	cfg := generated.Config{Resolvers: resolvers, Directives: directives.GetDirectives()}
@@ -48,7 +53,7 @@ func BuildRootHandler(conf config.Config) http.Handler {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(cfg))
 
-	return requestinfo.Handler()(logger.Handler()(dataloader.Middleware(userAnimeService)(srv)))
+	return requestinfo.Handler()(logger.Handler()(dataloader.Middleware(userAnimeService, userWorkService)(srv)))
 }
 
 func BuildRootHandlerWithContext(ctx context.Context, conf config.Config) http.Handler {
@@ -57,11 +62,14 @@ func BuildRootHandlerWithContext(ctx context.Context, conf config.Config) http.H
 	userListService := user_list2.NewUserListService(userListRepository)
 	userAnimeRepository := user_anime.NewUserAnimeRepository(database)
 	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
+	userWorkRepository := user_work.NewUserWorkRepository(database)
+	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
 
 	resolvers := &graph.Resolver{
 		Config:           conf,
 		UserListService:  userListService,
 		UserAnimeService: userAnimeService,
+		UserWorkService:  userWorkService,
 		Context:          ctx,
 	}
 
@@ -82,5 +90,5 @@ func BuildRootHandlerWithContext(ctx context.Context, conf config.Config) http.H
 	// Add GraphQL tracing extension
 	srv.Use(&middleware.GraphQLTracingExtension{})
 
-	return requestinfo.Handler()(logger.Handler()(dataloader.Middleware(userAnimeService)(srv)))
+	return requestinfo.Handler()(logger.Handler()(dataloader.Middleware(userAnimeService, userWorkService)(srv)))
 }

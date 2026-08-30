@@ -74,3 +74,69 @@ extend type Anime @key(fields: "id") {
     id: ID! @external
     userAnime: UserAnime @goField(forceResolver: true)
 }
+
+"""
+A work on a reader's shelf.
+
+Deliberately parallel to UserAnime -- same job, different medium -- so a client
+can render both through one card. Progress differs because a manga release is
+counted in chapters and volumes, not episodes.
+"""
+type UserWork @key(fields: "id") {
+    id: ID!
+    userID: String!
+    workID: String!
+    status: WorkStatus
+    score: Float
+    chapters: Int
+    volumes: Int
+    tags: [String!]
+    listID: String
+    createdAt: String
+    updatedAt: String
+    deletedAt: String
+}
+
+type UserWorkPaginated {
+    page: Int!
+    limit: Int!
+    total: Int64!
+    works: [UserWork!]!
+}
+
+input UserWorkInput {
+    id: String
+    workID: String!
+    status: WorkStatus
+    score: Float
+    chapters: Int
+    volumes: Int
+    tags: [String!]
+    listID: String
+}
+
+input UserWorksInput {
+    status: WorkStatus
+    page: Int!
+    limit: Int!
+}
+
+"""
+Reading statuses. Its own enum rather than reusing Status: watching a manga is
+not a thing, and one shared enum would force every client to translate WATCHING
+into "Reading" on some screens and not others.
+"""
+enum WorkStatus {
+    READING
+    COMPLETED
+    ONHOLD
+    DROPPED
+    PLANTOREAD
+}
+
+# The viewer's own row on a work, the way userAnime hangs off an Anime. Requires
+# Work to be an entity in anime-api, which is what its @key(fields: "id") is for.
+extend type Work @key(fields: "id") {
+    id: ID! @external
+    userWork: UserWork @goField(forceResolver: true)
+}

@@ -51,6 +51,27 @@ func (r *mutationResolver) DeleteAnime(ctx context.Context, id string) (bool, er
 	return true, nil
 }
 
+// AddWork is the resolver for the AddWork field.
+func (r *mutationResolver) AddWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error) {
+	return resolvers.UpsertUserWork(ctx, r.UserWorkService, input)
+}
+
+// UpdateWork is the resolver for the UpdateWork field.
+func (r *mutationResolver) UpdateWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error) {
+	// Same resolver as AddWork: the write is keyed on (user, work), so adding
+	// something already on the shelf updates it rather than duplicating it.
+	return resolvers.UpsertUserWork(ctx, r.UserWorkService, input)
+}
+
+// DeleteWork is the resolver for the DeleteWork field.
+func (r *mutationResolver) DeleteWork(ctx context.Context, id string) (bool, error) {
+	if err := resolvers.DeleteUserWork(ctx, r.UserWorkService, id); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // UserLists is the resolver for the UserLists field.
 func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error) {
 	return resolvers.GetUserListsByID(ctx, r.UserListService)
@@ -59,6 +80,11 @@ func (r *queryResolver) UserLists(ctx context.Context) ([]*model.UserList, error
 // UserAnimes is the resolver for the UserAnimes field.
 func (r *queryResolver) UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
 	return resolvers.GetUserAnimesByID(ctx, r.UserAnimeService, input)
+}
+
+// UserWorks is the resolver for the UserWorks field.
+func (r *queryResolver) UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error) {
+	return resolvers.UserWorks(ctx, r.UserWorkService, input)
 }
 
 // ApiInfo returns generated.ApiInfoResolver implementation.

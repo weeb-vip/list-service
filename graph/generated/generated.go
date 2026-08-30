@@ -42,6 +42,7 @@ type ResolverRoot interface {
 	Entity() EntityResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Work() WorkResolver
 }
 
 type DirectiveRoot struct {
@@ -65,6 +66,8 @@ type ComplexityRoot struct {
 		FindAnimeByID     func(childComplexity int, id string) int
 		FindUserAnimeByID func(childComplexity int, id string) int
 		FindUserListByID  func(childComplexity int, id string) int
+		FindUserWorkByID  func(childComplexity int, id string) int
+		FindWorkByID      func(childComplexity int, id string) int
 	}
 
 	ListServiceAPI struct {
@@ -73,15 +76,19 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAnime    func(childComplexity int, input model.UserAnimeInput) int
+		AddWork     func(childComplexity int, input model.UserWorkInput) int
 		CreateList  func(childComplexity int, input model.UserListInput) int
 		DeleteAnime func(childComplexity int, id string) int
 		DeleteList  func(childComplexity int, id string) int
+		DeleteWork  func(childComplexity int, id string) int
 		UpdateAnime func(childComplexity int, input model.UserAnimeInput) int
+		UpdateWork  func(childComplexity int, input model.UserWorkInput) int
 	}
 
 	Query struct {
 		UserAnimes         func(childComplexity int, input model.UserAnimesInput) int
 		UserLists          func(childComplexity int) int
+		UserWorks          func(childComplexity int, input model.UserWorksInput) int
 		__resolve__service func(childComplexity int) int
 		__resolve_entities func(childComplexity int, representations []map[string]interface{}) int
 	}
@@ -122,6 +129,33 @@ type ComplexityRoot struct {
 		UserID      func(childComplexity int) int
 	}
 
+	UserWork struct {
+		Chapters  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		DeletedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		ListID    func(childComplexity int) int
+		Score     func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Tags      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		UserID    func(childComplexity int) int
+		Volumes   func(childComplexity int) int
+		WorkID    func(childComplexity int) int
+	}
+
+	UserWorkPaginated struct {
+		Limit func(childComplexity int) int
+		Page  func(childComplexity int) int
+		Total func(childComplexity int) int
+		Works func(childComplexity int) int
+	}
+
+	Work struct {
+		ID       func(childComplexity int) int
+		UserWork func(childComplexity int) int
+	}
+
 	_Service struct {
 		SDL func(childComplexity int) int
 	}
@@ -138,6 +172,8 @@ type EntityResolver interface {
 	FindAPIInfoByName(ctx context.Context, name string) (*model.APIInfo, error)
 	FindUserAnimeByID(ctx context.Context, id string) (*model.UserAnime, error)
 	FindUserListByID(ctx context.Context, id string) (*model.UserList, error)
+	FindUserWorkByID(ctx context.Context, id string) (*model.UserWork, error)
+	FindWorkByID(ctx context.Context, id string) (*model.Work, error)
 }
 type MutationResolver interface {
 	CreateList(ctx context.Context, input model.UserListInput) (*model.UserList, error)
@@ -145,10 +181,17 @@ type MutationResolver interface {
 	AddAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
 	UpdateAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
 	DeleteAnime(ctx context.Context, id string) (bool, error)
+	AddWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error)
+	UpdateWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error)
+	DeleteWork(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	UserLists(ctx context.Context) ([]*model.UserList, error)
 	UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error)
+	UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error)
+}
+type WorkResolver interface {
+	UserWork(ctx context.Context, obj *model.Work) (*model.UserWork, error)
 }
 
 type executableSchema struct {
@@ -242,6 +285,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindUserListByID(childComplexity, args["id"].(string)), true
 
+	case "Entity.findUserWorkByID":
+		if e.complexity.Entity.FindUserWorkByID == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findUserWorkByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindUserWorkByID(childComplexity, args["id"].(string)), true
+
+	case "Entity.findWorkByID":
+		if e.complexity.Entity.FindWorkByID == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findWorkByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindWorkByID(childComplexity, args["id"].(string)), true
+
 	case "ListServiceAPI.version":
 		if e.complexity.ListServiceAPI.Version == nil {
 			break
@@ -260,6 +327,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddAnime(childComplexity, args["input"].(model.UserAnimeInput)), true
+
+	case "Mutation.AddWork":
+		if e.complexity.Mutation.AddWork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_AddWork_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddWork(childComplexity, args["input"].(model.UserWorkInput)), true
 
 	case "Mutation.CreateList":
 		if e.complexity.Mutation.CreateList == nil {
@@ -297,6 +376,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteList(childComplexity, args["id"].(string)), true
 
+	case "Mutation.DeleteWork":
+		if e.complexity.Mutation.DeleteWork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_DeleteWork_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteWork(childComplexity, args["id"].(string)), true
+
 	case "Mutation.UpdateAnime":
 		if e.complexity.Mutation.UpdateAnime == nil {
 			break
@@ -308,6 +399,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateAnime(childComplexity, args["input"].(model.UserAnimeInput)), true
+
+	case "Mutation.UpdateWork":
+		if e.complexity.Mutation.UpdateWork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_UpdateWork_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateWork(childComplexity, args["input"].(model.UserWorkInput)), true
 
 	case "Query.UserAnimes":
 		if e.complexity.Query.UserAnimes == nil {
@@ -327,6 +430,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.UserLists(childComplexity), true
+
+	case "Query.UserWorks":
+		if e.complexity.Query.UserWorks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_UserWorks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserWorks(childComplexity, args["input"].(model.UserWorksInput)), true
 
 	case "Query._service":
 		if e.complexity.Query.__resolve__service == nil {
@@ -536,6 +651,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserList.UserID(childComplexity), true
 
+	case "UserWork.chapters":
+		if e.complexity.UserWork.Chapters == nil {
+			break
+		}
+
+		return e.complexity.UserWork.Chapters(childComplexity), true
+
+	case "UserWork.createdAt":
+		if e.complexity.UserWork.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserWork.CreatedAt(childComplexity), true
+
+	case "UserWork.deletedAt":
+		if e.complexity.UserWork.DeletedAt == nil {
+			break
+		}
+
+		return e.complexity.UserWork.DeletedAt(childComplexity), true
+
+	case "UserWork.id":
+		if e.complexity.UserWork.ID == nil {
+			break
+		}
+
+		return e.complexity.UserWork.ID(childComplexity), true
+
+	case "UserWork.listID":
+		if e.complexity.UserWork.ListID == nil {
+			break
+		}
+
+		return e.complexity.UserWork.ListID(childComplexity), true
+
+	case "UserWork.score":
+		if e.complexity.UserWork.Score == nil {
+			break
+		}
+
+		return e.complexity.UserWork.Score(childComplexity), true
+
+	case "UserWork.status":
+		if e.complexity.UserWork.Status == nil {
+			break
+		}
+
+		return e.complexity.UserWork.Status(childComplexity), true
+
+	case "UserWork.tags":
+		if e.complexity.UserWork.Tags == nil {
+			break
+		}
+
+		return e.complexity.UserWork.Tags(childComplexity), true
+
+	case "UserWork.updatedAt":
+		if e.complexity.UserWork.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserWork.UpdatedAt(childComplexity), true
+
+	case "UserWork.userID":
+		if e.complexity.UserWork.UserID == nil {
+			break
+		}
+
+		return e.complexity.UserWork.UserID(childComplexity), true
+
+	case "UserWork.volumes":
+		if e.complexity.UserWork.Volumes == nil {
+			break
+		}
+
+		return e.complexity.UserWork.Volumes(childComplexity), true
+
+	case "UserWork.workID":
+		if e.complexity.UserWork.WorkID == nil {
+			break
+		}
+
+		return e.complexity.UserWork.WorkID(childComplexity), true
+
+	case "UserWorkPaginated.limit":
+		if e.complexity.UserWorkPaginated.Limit == nil {
+			break
+		}
+
+		return e.complexity.UserWorkPaginated.Limit(childComplexity), true
+
+	case "UserWorkPaginated.page":
+		if e.complexity.UserWorkPaginated.Page == nil {
+			break
+		}
+
+		return e.complexity.UserWorkPaginated.Page(childComplexity), true
+
+	case "UserWorkPaginated.total":
+		if e.complexity.UserWorkPaginated.Total == nil {
+			break
+		}
+
+		return e.complexity.UserWorkPaginated.Total(childComplexity), true
+
+	case "UserWorkPaginated.works":
+		if e.complexity.UserWorkPaginated.Works == nil {
+			break
+		}
+
+		return e.complexity.UserWorkPaginated.Works(childComplexity), true
+
+	case "Work.id":
+		if e.complexity.Work.ID == nil {
+			break
+		}
+
+		return e.complexity.Work.ID(childComplexity), true
+
+	case "Work.userWork":
+		if e.complexity.Work.UserWork == nil {
+			break
+		}
+
+		return e.complexity.Work.UserWork(childComplexity), true
+
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
 			break
@@ -554,6 +795,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUserAnimeInput,
 		ec.unmarshalInputUserAnimesInput,
 		ec.unmarshalInputUserListInput,
+		ec.unmarshalInputUserWorkInput,
+		ec.unmarshalInputUserWorksInput,
 	)
 	first := true
 
@@ -699,6 +942,7 @@ type ApiInfo @key(fields: "name") {
 type Query {
     UserLists: [UserList!] @Authenticated
     UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
+    UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
 }
 
 type Mutation {
@@ -707,6 +951,9 @@ type Mutation {
     AddAnime(input: UserAnimeInput!): UserAnime! @Authenticated
     UpdateAnime(input: UserAnimeInput!): UserAnime! @Authenticated
     DeleteAnime(id: ID!): Boolean! @Authenticated
+    AddWork(input: UserWorkInput!): UserWork! @Authenticated
+    UpdateWork(input: UserWorkInput!): UserWork! @Authenticated
+    DeleteWork(id: ID!): Boolean! @Authenticated
 }`, BuiltIn: false},
 	{Name: "../types.graphqls", Input: `type UserAnime @key(fields: "id") {
     id: ID!
@@ -783,7 +1030,74 @@ input UserAnimesInput {
 extend type Anime @key(fields: "id") {
     id: ID! @external
     userAnime: UserAnime @goField(forceResolver: true)
-}`, BuiltIn: false},
+}
+
+"""
+A work on a reader's shelf.
+
+Deliberately parallel to UserAnime -- same job, different medium -- so a client
+can render both through one card. Progress differs because a manga release is
+counted in chapters and volumes, not episodes.
+"""
+type UserWork @key(fields: "id") {
+    id: ID!
+    userID: String!
+    workID: String!
+    status: WorkStatus
+    score: Float
+    chapters: Int
+    volumes: Int
+    tags: [String!]
+    listID: String
+    createdAt: String
+    updatedAt: String
+    deletedAt: String
+}
+
+type UserWorkPaginated {
+    page: Int!
+    limit: Int!
+    total: Int64!
+    works: [UserWork!]!
+}
+
+input UserWorkInput {
+    id: String
+    workID: String!
+    status: WorkStatus
+    score: Float
+    chapters: Int
+    volumes: Int
+    tags: [String!]
+    listID: String
+}
+
+input UserWorksInput {
+    status: WorkStatus
+    page: Int!
+    limit: Int!
+}
+
+"""
+Reading statuses. Its own enum rather than reusing Status: watching a manga is
+not a thing, and one shared enum would force every client to translate WATCHING
+into "Reading" on some screens and not others.
+"""
+enum WorkStatus {
+    READING
+    COMPLETED
+    ONHOLD
+    DROPPED
+    PLANTOREAD
+}
+
+# The viewer's own row on a work, the way userAnime hangs off an Anime. Requires
+# Work to be an entity in anime-api, which is what its @key(fields: "id") is for.
+extend type Work @key(fields: "id") {
+    id: ID! @external
+    userWork: UserWork @goField(forceResolver: true)
+}
+`, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
 	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
 	directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
@@ -795,7 +1109,7 @@ extend type Anime @key(fields: "id") {
 `, BuiltIn: true},
 	{Name: "../../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Anime | ApiInfo | UserAnime | UserList
+union _Entity = Anime | ApiInfo | UserAnime | UserList | UserWork | Work
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
@@ -803,6 +1117,8 @@ type Entity {
 	findApiInfoByName(name: String!,): ApiInfo!
 	findUserAnimeByID(id: ID!,): UserAnime!
 	findUserListByID(id: ID!,): UserList!
+	findUserWorkByID(id: ID!,): UserWork!
+	findWorkByID(id: ID!,): Work!
 
 }
 
@@ -897,6 +1213,36 @@ func (ec *executionContext) field_Entity_findUserListByID_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Entity_findUserWorkByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Entity_findWorkByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_AddAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -904,6 +1250,21 @@ func (ec *executionContext) field_Mutation_AddAnime_args(ctx context.Context, ra
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_AddWork_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserWorkInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserWorkInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -957,6 +1318,21 @@ func (ec *executionContext) field_Mutation_DeleteList_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_DeleteWork_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_UpdateAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -972,6 +1348,21 @@ func (ec *executionContext) field_Mutation_UpdateAnime_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_UpdateWork_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserWorkInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserWorkInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_UserAnimes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -979,6 +1370,21 @@ func (ec *executionContext) field_Query_UserAnimes_args(ctx context.Context, raw
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUserAnimesInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimesInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_UserWorks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserWorksInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserWorksInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorksInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1542,6 +1948,148 @@ func (ec *executionContext) fieldContext_Entity_findUserListByID(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Entity_findUserWorkByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findUserWorkByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindUserWorkByID(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWork)
+	fc.Result = res
+	return ec.marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findUserWorkByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserWork_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserWork_userID(ctx, field)
+			case "workID":
+				return ec.fieldContext_UserWork_workID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserWork_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserWork_score(ctx, field)
+			case "chapters":
+				return ec.fieldContext_UserWork_chapters(ctx, field)
+			case "volumes":
+				return ec.fieldContext_UserWork_volumes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserWork_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserWork_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserWork_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserWork_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserWork_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findUserWorkByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entity_findWorkByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findWorkByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindWorkByID(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Work)
+	fc.Result = res
+	return ec.marshalNWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findWorkByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Work_id(ctx, field)
+			case "userWork":
+				return ec.fieldContext_Work_userWork(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Work", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findWorkByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ListServiceAPI_version(ctx context.Context, field graphql.CollectedField, obj *model.ListServiceAPI) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ListServiceAPI_version(ctx, field)
 	if err != nil {
@@ -2039,6 +2587,283 @@ func (ec *executionContext) fieldContext_Mutation_DeleteAnime(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_AddWork(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_AddWork(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddWork(rctx, fc.Args["input"].(model.UserWorkInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserWork); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserWork`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWork)
+	fc.Result = res
+	return ec.marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_AddWork(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserWork_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserWork_userID(ctx, field)
+			case "workID":
+				return ec.fieldContext_UserWork_workID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserWork_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserWork_score(ctx, field)
+			case "chapters":
+				return ec.fieldContext_UserWork_chapters(ctx, field)
+			case "volumes":
+				return ec.fieldContext_UserWork_volumes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserWork_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserWork_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserWork_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserWork_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserWork_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_AddWork_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_UpdateWork(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_UpdateWork(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateWork(rctx, fc.Args["input"].(model.UserWorkInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserWork); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserWork`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWork)
+	fc.Result = res
+	return ec.marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_UpdateWork(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserWork_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserWork_userID(ctx, field)
+			case "workID":
+				return ec.fieldContext_UserWork_workID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserWork_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserWork_score(ctx, field)
+			case "chapters":
+				return ec.fieldContext_UserWork_chapters(ctx, field)
+			case "volumes":
+				return ec.fieldContext_UserWork_volumes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserWork_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserWork_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserWork_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserWork_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserWork_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_UpdateWork_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_DeleteWork(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_DeleteWork(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteWork(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_DeleteWork(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_DeleteWork_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_UserLists(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_UserLists(ctx, field)
 	if err != nil {
@@ -2198,6 +3023,88 @@ func (ec *executionContext) fieldContext_Query_UserAnimes(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_UserAnimes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_UserWorks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_UserWorks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserWorks(rctx, fc.Args["input"].(model.UserWorksInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserWorkPaginated); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserWorkPaginated`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWorkPaginated)
+	fc.Result = res
+	return ec.marshalOUserWorkPaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkPaginated(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_UserWorks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "page":
+				return ec.fieldContext_UserWorkPaginated_page(ctx, field)
+			case "limit":
+				return ec.fieldContext_UserWorkPaginated_limit(ctx, field)
+			case "total":
+				return ec.fieldContext_UserWorkPaginated_total(ctx, field)
+			case "works":
+				return ec.fieldContext_UserWorkPaginated_works(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWorkPaginated", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_UserWorks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3596,6 +4503,820 @@ func (ec *executionContext) fieldContext_UserList_deletedAt(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_id(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_userID(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_userID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_userID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_workID(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_workID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_workID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_status(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.WorkStatus)
+	fc.Result = res
+	return ec.marshalOWorkStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWorkStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type WorkStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_score(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_score(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Score, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_score(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_chapters(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_chapters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Chapters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_chapters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_volumes(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_volumes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Volumes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_volumes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_tags(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_listID(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_listID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ListID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_listID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWork_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.UserWork) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWork_deletedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWork_deletedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWork",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkPaginated_page(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkPaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkPaginated_page(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Page, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkPaginated_page(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkPaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkPaginated_limit(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkPaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkPaginated_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkPaginated_limit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkPaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkPaginated_total(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkPaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkPaginated_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkPaginated_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkPaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkPaginated_works(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkPaginated) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkPaginated_works(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Works, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UserWork)
+	fc.Result = res
+	return ec.marshalNUserWork2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkPaginated_works(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkPaginated",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserWork_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserWork_userID(ctx, field)
+			case "workID":
+				return ec.fieldContext_UserWork_workID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserWork_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserWork_score(ctx, field)
+			case "chapters":
+				return ec.fieldContext_UserWork_chapters(ctx, field)
+			case "volumes":
+				return ec.fieldContext_UserWork_volumes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserWork_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserWork_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserWork_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserWork_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserWork_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Work_id(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Work_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Work_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Work",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Work_userWork(ctx context.Context, field graphql.CollectedField, obj *model.Work) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Work_userWork(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Work().UserWork(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWork)
+	fc.Result = res
+	return ec.marshalOUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Work_userWork(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Work",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_UserWork_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_UserWork_userID(ctx, field)
+			case "workID":
+				return ec.fieldContext_UserWork_workID(ctx, field)
+			case "status":
+				return ec.fieldContext_UserWork_status(ctx, field)
+			case "score":
+				return ec.fieldContext_UserWork_score(ctx, field)
+			case "chapters":
+				return ec.fieldContext_UserWork_chapters(ctx, field)
+			case "volumes":
+				return ec.fieldContext_UserWork_volumes(ctx, field)
+			case "tags":
+				return ec.fieldContext_UserWork_tags(ctx, field)
+			case "listID":
+				return ec.fieldContext_UserWork_listID(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_UserWork_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_UserWork_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_UserWork_deletedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
 		},
 	}
 	return fc, nil
@@ -5637,6 +7358,145 @@ func (ec *executionContext) unmarshalInputUserListInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserWorkInput(ctx context.Context, obj interface{}) (model.UserWorkInput, error) {
+	var it model.UserWorkInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "workID", "status", "score", "chapters", "volumes", "tags", "listID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "workID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkID = data
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOWorkStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWorkStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "score":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("score"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Score = data
+		case "chapters":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chapters"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Chapters = data
+		case "volumes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("volumes"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Volumes = data
+		case "tags":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "listID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listID"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ListID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserWorksInput(ctx context.Context, obj interface{}) (model.UserWorksInput, error) {
+	var it model.UserWorksInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"status", "page", "limit"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "status":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOWorkStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWorkStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Limit = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -5673,6 +7533,20 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._UserList(ctx, sel, obj)
+	case model.UserWork:
+		return ec._UserWork(ctx, sel, &obj)
+	case *model.UserWork:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UserWork(ctx, sel, obj)
+	case model.Work:
+		return ec._Work(ctx, sel, &obj)
+	case *model.Work:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Work(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -5936,6 +7810,50 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "findUserWorkByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findUserWorkByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "findWorkByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findWorkByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6052,6 +7970,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "AddWork":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_AddWork(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "UpdateWork":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_UpdateWork(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "DeleteWork":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_DeleteWork(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6123,6 +8062,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_UserAnimes(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "UserWorks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_UserWorks(ctx, field)
 				return res
 			}
 
@@ -6370,6 +8328,199 @@ func (ec *executionContext) _UserList(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._UserList_updatedAt(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._UserList_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userWorkImplementors = []string{"UserWork", "_Entity"}
+
+func (ec *executionContext) _UserWork(ctx context.Context, sel ast.SelectionSet, obj *model.UserWork) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userWorkImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserWork")
+		case "id":
+			out.Values[i] = ec._UserWork_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userID":
+			out.Values[i] = ec._UserWork_userID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "workID":
+			out.Values[i] = ec._UserWork_workID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._UserWork_status(ctx, field, obj)
+		case "score":
+			out.Values[i] = ec._UserWork_score(ctx, field, obj)
+		case "chapters":
+			out.Values[i] = ec._UserWork_chapters(ctx, field, obj)
+		case "volumes":
+			out.Values[i] = ec._UserWork_volumes(ctx, field, obj)
+		case "tags":
+			out.Values[i] = ec._UserWork_tags(ctx, field, obj)
+		case "listID":
+			out.Values[i] = ec._UserWork_listID(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._UserWork_createdAt(ctx, field, obj)
+		case "updatedAt":
+			out.Values[i] = ec._UserWork_updatedAt(ctx, field, obj)
+		case "deletedAt":
+			out.Values[i] = ec._UserWork_deletedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userWorkPaginatedImplementors = []string{"UserWorkPaginated"}
+
+func (ec *executionContext) _UserWorkPaginated(ctx context.Context, sel ast.SelectionSet, obj *model.UserWorkPaginated) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userWorkPaginatedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserWorkPaginated")
+		case "page":
+			out.Values[i] = ec._UserWorkPaginated_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limit":
+			out.Values[i] = ec._UserWorkPaginated_limit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total":
+			out.Values[i] = ec._UserWorkPaginated_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "works":
+			out.Values[i] = ec._UserWorkPaginated_works(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var workImplementors = []string{"Work", "_Entity"}
+
+func (ec *executionContext) _Work(ctx context.Context, sel ast.SelectionSet, obj *model.Work) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, workImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Work")
+		case "id":
+			out.Values[i] = ec._Work_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "userWork":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Work_userWork(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6959,6 +9110,88 @@ func (ec *executionContext) unmarshalNUserListInput2githubᚗcomᚋweebᚑvipᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNUserWork2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx context.Context, sel ast.SelectionSet, v model.UserWork) graphql.Marshaler {
+	return ec._UserWork(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserWork2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.UserWork) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx context.Context, sel ast.SelectionSet, v *model.UserWork) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserWork(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUserWorkInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkInput(ctx context.Context, v interface{}) (model.UserWorkInput, error) {
+	res, err := ec.unmarshalInputUserWorkInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUserWorksInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorksInput(ctx context.Context, v interface{}) (model.UserWorksInput, error) {
+	res, err := ec.unmarshalInputUserWorksInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNWork2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWork(ctx context.Context, sel ast.SelectionSet, v model.Work) graphql.Marshaler {
+	return ec._Work(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWork(ctx context.Context, sel ast.SelectionSet, v *model.Work) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Work(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
 	res, err := graphql.UnmarshalMap(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7519,6 +9752,36 @@ func (ec *executionContext) marshalOUserList2ᚕᚖgithubᚗcomᚋweebᚑvipᚋl
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWork(ctx context.Context, sel ast.SelectionSet, v *model.UserWork) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserWork(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOUserWorkPaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkPaginated(ctx context.Context, sel ast.SelectionSet, v *model.UserWorkPaginated) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserWorkPaginated(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOWorkStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWorkStatus(ctx context.Context, v interface{}) (*model.WorkStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.WorkStatus)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOWorkStatus2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWorkStatus(ctx context.Context, sel ast.SelectionSet, v *model.WorkStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalO_Entity2githubᚗcomᚋ99designsᚋgqlgenᚋpluginᚋfederationᚋfedruntimeᚐEntity(ctx context.Context, sel ast.SelectionSet, v fedruntime.Entity) graphql.Marshaler {
