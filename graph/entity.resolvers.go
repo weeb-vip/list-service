@@ -34,6 +34,16 @@ func (r *entityResolver) FindUserListByID(ctx context.Context, id string) (*mode
 	panic(fmt.Errorf("not implemented: FindUserListByID - findUserListByID"))
 }
 
+// FindUserWorkByID is the resolver for the findUserWorkByID field.
+func (r *entityResolver) FindUserWorkByID(ctx context.Context, id string) (*model.UserWork, error) {
+	panic(fmt.Errorf("not implemented: FindUserWorkByID - findUserWorkByID"))
+}
+
+// FindWorkByID is the resolver for the findWorkByID field.
+func (r *entityResolver) FindWorkByID(ctx context.Context, id string) (*model.Work, error) {
+	panic(fmt.Errorf("not implemented: FindWorkByID - findWorkByID"))
+}
+
 // Entity returns generated.EntityResolver implementation.
 func (r *Resolver) Entity() generated.EntityResolver { return &entityResolver{r} }
 

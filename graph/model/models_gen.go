@@ -96,6 +96,59 @@ type UserListInput struct {
 	IsPublic    *bool    `json:"isPublic,omitempty"`
 }
 
+// A work on a reader's shelf.
+//
+// Deliberately parallel to UserAnime -- same job, different medium -- so a client
+// can render both through one card. Progress differs because a manga release is
+// counted in chapters and volumes, not episodes.
+type UserWork struct {
+	ID        string      `json:"id"`
+	UserID    string      `json:"userID"`
+	WorkID    string      `json:"workID"`
+	Status    *WorkStatus `json:"status,omitempty"`
+	Score     *float64    `json:"score,omitempty"`
+	Chapters  *int        `json:"chapters,omitempty"`
+	Volumes   *int        `json:"volumes,omitempty"`
+	Tags      []string    `json:"tags,omitempty"`
+	ListID    *string     `json:"listID,omitempty"`
+	CreatedAt *string     `json:"createdAt,omitempty"`
+	UpdatedAt *string     `json:"updatedAt,omitempty"`
+	DeletedAt *string     `json:"deletedAt,omitempty"`
+}
+
+func (UserWork) IsEntity() {}
+
+type UserWorkInput struct {
+	ID       *string     `json:"id,omitempty"`
+	WorkID   string      `json:"workID"`
+	Status   *WorkStatus `json:"status,omitempty"`
+	Score    *float64    `json:"score,omitempty"`
+	Chapters *int        `json:"chapters,omitempty"`
+	Volumes  *int        `json:"volumes,omitempty"`
+	Tags     []string    `json:"tags,omitempty"`
+	ListID   *string     `json:"listID,omitempty"`
+}
+
+type UserWorkPaginated struct {
+	Page  int         `json:"page"`
+	Limit int         `json:"limit"`
+	Total string      `json:"total"`
+	Works []*UserWork `json:"works"`
+}
+
+type UserWorksInput struct {
+	Status *WorkStatus `json:"status,omitempty"`
+	Page   int         `json:"page"`
+	Limit  int         `json:"limit"`
+}
+
+type Work struct {
+	ID       string    `json:"id"`
+	UserWork *UserWork `json:"userWork,omitempty"`
+}
+
+func (Work) IsEntity() {}
+
 type Status string
 
 const (
@@ -140,5 +193,55 @@ func (e *Status) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Status) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Reading statuses. Its own enum rather than reusing Status: watching a manga is
+// not a thing, and one shared enum would force every client to translate WATCHING
+// into "Reading" on some screens and not others.
+type WorkStatus string
+
+const (
+	WorkStatusReading    WorkStatus = "READING"
+	WorkStatusCompleted  WorkStatus = "COMPLETED"
+	WorkStatusOnhold     WorkStatus = "ONHOLD"
+	WorkStatusDropped    WorkStatus = "DROPPED"
+	WorkStatusPlantoread WorkStatus = "PLANTOREAD"
+)
+
+var AllWorkStatus = []WorkStatus{
+	WorkStatusReading,
+	WorkStatusCompleted,
+	WorkStatusOnhold,
+	WorkStatusDropped,
+	WorkStatusPlantoread,
+}
+
+func (e WorkStatus) IsValid() bool {
+	switch e {
+	case WorkStatusReading, WorkStatusCompleted, WorkStatusOnhold, WorkStatusDropped, WorkStatusPlantoread:
+		return true
+	}
+	return false
+}
+
+func (e WorkStatus) String() string {
+	return string(e)
+}
+
+func (e *WorkStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WorkStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WorkStatus", str)
+	}
+	return nil
+}
+
+func (e WorkStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

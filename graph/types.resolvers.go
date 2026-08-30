@@ -6,10 +6,10 @@ package graph
 
 import (
 	"context"
-	"github.com/weeb-vip/list-service/internal/resolvers"
 
 	"github.com/weeb-vip/list-service/graph/generated"
 	"github.com/weeb-vip/list-service/graph/model"
+	"github.com/weeb-vip/list-service/internal/resolvers"
 )
 
 // UserAnime is the resolver for the userAnime field.
@@ -17,7 +17,16 @@ func (r *animeResolver) UserAnime(ctx context.Context, obj *model.Anime) (*model
 	return resolvers.GetUserAnimeByAnimeIDWithLoader(ctx, obj.ID)
 }
 
+// UserWork is the resolver for the userWork field.
+func (r *workResolver) UserWork(ctx context.Context, obj *model.Work) (*model.UserWork, error) {
+	return resolvers.GetUserWorkByWorkIDWithLoader(ctx, obj.ID)
+}
+
 // Anime returns generated.AnimeResolver implementation.
 func (r *Resolver) Anime() generated.AnimeResolver { return &animeResolver{r} }
 
+// Work returns generated.WorkResolver implementation.
+func (r *Resolver) Work() generated.WorkResolver { return &workResolver{r} }
+
 type animeResolver struct{ *Resolver }
+type workResolver struct{ *Resolver }
