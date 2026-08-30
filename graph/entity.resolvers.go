@@ -40,8 +40,14 @@ func (r *entityResolver) FindUserWorkByID(ctx context.Context, id string) (*mode
 }
 
 // FindWorkByID is the resolver for the findWorkByID field.
+//
+// The key and nothing else, exactly as FindAnimeByID above it. This service
+// extends Work; it does not own one. Every field but the id comes from
+// anime-api, and userWork is resolved from this id.
 func (r *entityResolver) FindWorkByID(ctx context.Context, id string) (*model.Work, error) {
-	panic(fmt.Errorf("not implemented: FindWorkByID - findWorkByID"))
+	return &model.Work{
+		ID: id,
+	}, nil
 }
 
 // Entity returns generated.EntityResolver implementation.
