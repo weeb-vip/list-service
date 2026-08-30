@@ -15,10 +15,12 @@ import (
 	"github.com/weeb-vip/list-service/internal/db"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_anime"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_list"
+	"github.com/weeb-vip/list-service/internal/db/repositories/user_progress"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_work"
 	"github.com/weeb-vip/list-service/internal/directives"
 	user_anime2 "github.com/weeb-vip/list-service/internal/services/user_anime"
 	user_list2 "github.com/weeb-vip/list-service/internal/services/user_list"
+	user_progress2 "github.com/weeb-vip/list-service/internal/services/user_progress"
 	user_work2 "github.com/weeb-vip/list-service/internal/services/user_work"
 	"net/http"
 )
@@ -31,12 +33,15 @@ func BuildRootHandler(conf config.Config) http.Handler {
 	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
 	userWorkRepository := user_work.NewUserWorkRepository(database)
 	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
+	userProgressRepository := user_progress.NewUserProgressRepository(database)
+	userProgressService := user_progress2.NewUserProgressService(userProgressRepository, userAnimeRepository, userWorkRepository)
 
 	resolvers := &graph.Resolver{
-		Config:           conf,
-		UserListService:  userListService,
-		UserAnimeService: userAnimeService,
-		UserWorkService:  userWorkService,
+		Config:              conf,
+		UserListService:     userListService,
+		UserAnimeService:    userAnimeService,
+		UserWorkService:     userWorkService,
+		UserProgressService: userProgressService,
 	}
 
 	cfg := generated.Config{Resolvers: resolvers, Directives: directives.GetDirectives()}
@@ -64,13 +69,16 @@ func BuildRootHandlerWithContext(ctx context.Context, conf config.Config) http.H
 	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
 	userWorkRepository := user_work.NewUserWorkRepository(database)
 	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
+	userProgressRepository := user_progress.NewUserProgressRepository(database)
+	userProgressService := user_progress2.NewUserProgressService(userProgressRepository, userAnimeRepository, userWorkRepository)
 
 	resolvers := &graph.Resolver{
-		Config:           conf,
-		UserListService:  userListService,
-		UserAnimeService: userAnimeService,
-		UserWorkService:  userWorkService,
-		Context:          ctx,
+		Config:              conf,
+		UserListService:     userListService,
+		UserAnimeService:    userAnimeService,
+		UserWorkService:     userWorkService,
+		UserProgressService: userProgressService,
+		Context:             ctx,
 	}
 
 	cfg := generated.Config{Resolvers: resolvers, Directives: directives.GetDirectives()}

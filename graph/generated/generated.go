@@ -75,22 +75,35 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAnime    func(childComplexity int, input model.UserAnimeInput) int
-		AddWork     func(childComplexity int, input model.UserWorkInput) int
-		CreateList  func(childComplexity int, input model.UserListInput) int
-		DeleteAnime func(childComplexity int, id string) int
-		DeleteList  func(childComplexity int, id string) int
-		DeleteWork  func(childComplexity int, id string) int
-		UpdateAnime func(childComplexity int, input model.UserAnimeInput) int
-		UpdateWork  func(childComplexity int, input model.UserWorkInput) int
+		AddAnime             func(childComplexity int, input model.UserAnimeInput) int
+		AddWork              func(childComplexity int, input model.UserWorkInput) int
+		CreateList           func(childComplexity int, input model.UserListInput) int
+		DeleteAnime          func(childComplexity int, id string) int
+		DeleteList           func(childComplexity int, id string) int
+		DeleteWork           func(childComplexity int, id string) int
+		MarkChapterRead      func(childComplexity int, input model.MarkChapterInput) int
+		MarkEpisodeWatched   func(childComplexity int, input model.MarkEpisodeInput) int
+		UnmarkChapterRead    func(childComplexity int, input model.MarkChapterInput) int
+		UnmarkEpisodeWatched func(childComplexity int, input model.MarkEpisodeInput) int
+		UpdateAnime          func(childComplexity int, input model.UserAnimeInput) int
+		UpdateWork           func(childComplexity int, input model.UserWorkInput) int
 	}
 
 	Query struct {
+		ReadChapters       func(childComplexity int, workID string) int
 		UserAnimes         func(childComplexity int, input model.UserAnimesInput) int
 		UserLists          func(childComplexity int) int
 		UserWorks          func(childComplexity int, input model.UserWorksInput) int
+		WatchedEpisodes    func(childComplexity int, animeID string) int
 		__resolve__service func(childComplexity int) int
 		__resolve_entities func(childComplexity int, representations []map[string]interface{}) int
+	}
+
+	ReadChapter struct {
+		ChapterNumber func(childComplexity int) int
+		ID            func(childComplexity int) int
+		ReadAt        func(childComplexity int) int
+		WorkID        func(childComplexity int) int
 	}
 
 	UserAnime struct {
@@ -151,6 +164,13 @@ type ComplexityRoot struct {
 		Works func(childComplexity int) int
 	}
 
+	WatchedEpisode struct {
+		AnimeID       func(childComplexity int) int
+		EpisodeNumber func(childComplexity int) int
+		ID            func(childComplexity int) int
+		WatchedAt     func(childComplexity int) int
+	}
+
 	Work struct {
 		ID       func(childComplexity int) int
 		UserWork func(childComplexity int) int
@@ -184,11 +204,17 @@ type MutationResolver interface {
 	AddWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error)
 	UpdateWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error)
 	DeleteWork(ctx context.Context, id string) (bool, error)
+	MarkEpisodeWatched(ctx context.Context, input model.MarkEpisodeInput) (*model.WatchedEpisode, error)
+	UnmarkEpisodeWatched(ctx context.Context, input model.MarkEpisodeInput) (bool, error)
+	MarkChapterRead(ctx context.Context, input model.MarkChapterInput) (*model.ReadChapter, error)
+	UnmarkChapterRead(ctx context.Context, input model.MarkChapterInput) (bool, error)
 }
 type QueryResolver interface {
 	UserLists(ctx context.Context) ([]*model.UserList, error)
 	UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error)
 	UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error)
+	WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error)
+	ReadChapters(ctx context.Context, workID string) ([]*model.ReadChapter, error)
 }
 type WorkResolver interface {
 	UserWork(ctx context.Context, obj *model.Work) (*model.UserWork, error)
@@ -388,6 +414,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteWork(childComplexity, args["id"].(string)), true
 
+	case "Mutation.MarkChapterRead":
+		if e.complexity.Mutation.MarkChapterRead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_MarkChapterRead_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MarkChapterRead(childComplexity, args["input"].(model.MarkChapterInput)), true
+
+	case "Mutation.MarkEpisodeWatched":
+		if e.complexity.Mutation.MarkEpisodeWatched == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_MarkEpisodeWatched_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MarkEpisodeWatched(childComplexity, args["input"].(model.MarkEpisodeInput)), true
+
+	case "Mutation.UnmarkChapterRead":
+		if e.complexity.Mutation.UnmarkChapterRead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_UnmarkChapterRead_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnmarkChapterRead(childComplexity, args["input"].(model.MarkChapterInput)), true
+
+	case "Mutation.UnmarkEpisodeWatched":
+		if e.complexity.Mutation.UnmarkEpisodeWatched == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_UnmarkEpisodeWatched_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnmarkEpisodeWatched(childComplexity, args["input"].(model.MarkEpisodeInput)), true
+
 	case "Mutation.UpdateAnime":
 		if e.complexity.Mutation.UpdateAnime == nil {
 			break
@@ -411,6 +485,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateWork(childComplexity, args["input"].(model.UserWorkInput)), true
+
+	case "Query.ReadChapters":
+		if e.complexity.Query.ReadChapters == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ReadChapters_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ReadChapters(childComplexity, args["workID"].(string)), true
 
 	case "Query.UserAnimes":
 		if e.complexity.Query.UserAnimes == nil {
@@ -443,6 +529,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UserWorks(childComplexity, args["input"].(model.UserWorksInput)), true
 
+	case "Query.WatchedEpisodes":
+		if e.complexity.Query.WatchedEpisodes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_WatchedEpisodes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WatchedEpisodes(childComplexity, args["animeID"].(string)), true
+
 	case "Query._service":
 		if e.complexity.Query.__resolve__service == nil {
 			break
@@ -461,6 +559,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]interface{})), true
+
+	case "ReadChapter.chapterNumber":
+		if e.complexity.ReadChapter.ChapterNumber == nil {
+			break
+		}
+
+		return e.complexity.ReadChapter.ChapterNumber(childComplexity), true
+
+	case "ReadChapter.id":
+		if e.complexity.ReadChapter.ID == nil {
+			break
+		}
+
+		return e.complexity.ReadChapter.ID(childComplexity), true
+
+	case "ReadChapter.readAt":
+		if e.complexity.ReadChapter.ReadAt == nil {
+			break
+		}
+
+		return e.complexity.ReadChapter.ReadAt(childComplexity), true
+
+	case "ReadChapter.workID":
+		if e.complexity.ReadChapter.WorkID == nil {
+			break
+		}
+
+		return e.complexity.ReadChapter.WorkID(childComplexity), true
 
 	case "UserAnime.animeID":
 		if e.complexity.UserAnime.AnimeID == nil {
@@ -763,6 +889,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserWorkPaginated.Works(childComplexity), true
 
+	case "WatchedEpisode.animeID":
+		if e.complexity.WatchedEpisode.AnimeID == nil {
+			break
+		}
+
+		return e.complexity.WatchedEpisode.AnimeID(childComplexity), true
+
+	case "WatchedEpisode.episodeNumber":
+		if e.complexity.WatchedEpisode.EpisodeNumber == nil {
+			break
+		}
+
+		return e.complexity.WatchedEpisode.EpisodeNumber(childComplexity), true
+
+	case "WatchedEpisode.id":
+		if e.complexity.WatchedEpisode.ID == nil {
+			break
+		}
+
+		return e.complexity.WatchedEpisode.ID(childComplexity), true
+
+	case "WatchedEpisode.watchedAt":
+		if e.complexity.WatchedEpisode.WatchedAt == nil {
+			break
+		}
+
+		return e.complexity.WatchedEpisode.WatchedAt(childComplexity), true
+
 	case "Work.id":
 		if e.complexity.Work.ID == nil {
 			break
@@ -792,6 +946,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputMarkChapterInput,
+		ec.unmarshalInputMarkEpisodeInput,
 		ec.unmarshalInputUserAnimeInput,
 		ec.unmarshalInputUserAnimesInput,
 		ec.unmarshalInputUserListInput,
@@ -943,6 +1099,8 @@ type Query {
     UserLists: [UserList!] @Authenticated
     UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
+    WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
+    ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
 
 type Mutation {
@@ -954,6 +1112,10 @@ type Mutation {
     AddWork(input: UserWorkInput!): UserWork! @Authenticated
     UpdateWork(input: UserWorkInput!): UserWork! @Authenticated
     DeleteWork(id: ID!): Boolean! @Authenticated
+    MarkEpisodeWatched(input: MarkEpisodeInput!): WatchedEpisode! @Authenticated
+    UnmarkEpisodeWatched(input: MarkEpisodeInput!): Boolean! @Authenticated
+    MarkChapterRead(input: MarkChapterInput!): ReadChapter! @Authenticated
+    UnmarkChapterRead(input: MarkChapterInput!): Boolean! @Authenticated
 }`, BuiltIn: false},
 	{Name: "../types.graphqls", Input: `type UserAnime @key(fields: "id") {
     id: ID!
@@ -1096,6 +1258,41 @@ enum WorkStatus {
 extend type Work @key(fields: "id") {
     id: ID! @external
     userWork: UserWork @goField(forceResolver: true)
+}
+
+"""
+One episode a viewer has finished.
+
+Identified by number rather than by the episode record's id: the scraper
+sometimes clears an anime's episodes and reinserts them with new ids, and
+history pointing at those would be lost on every re-scrape.
+"""
+type WatchedEpisode {
+    id: ID!
+    animeID: String!
+    episodeNumber: Int!
+    watchedAt: String
+}
+
+"One chapter a reader has finished. Numbered, because works have no chapter records at all."
+type ReadChapter {
+    id: ID!
+    workID: String!
+    chapterNumber: Int!
+    readAt: String
+}
+
+input MarkEpisodeInput {
+    animeID: String!
+    episodeNumber: Int!
+    "Defaults to now. Supplied when backfilling something watched earlier."
+    watchedAt: String
+}
+
+input MarkChapterInput {
+    workID: String!
+    chapterNumber: Int!
+    readAt: String
 }
 `, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
@@ -1333,6 +1530,66 @@ func (ec *executionContext) field_Mutation_DeleteWork_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_MarkChapterRead_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MarkChapterInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMarkChapterInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkChapterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_MarkEpisodeWatched_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MarkEpisodeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMarkEpisodeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkEpisodeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_UnmarkChapterRead_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MarkChapterInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMarkChapterInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkChapterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_UnmarkEpisodeWatched_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MarkEpisodeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMarkEpisodeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkEpisodeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_UpdateAnime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1363,6 +1620,21 @@ func (ec *executionContext) field_Mutation_UpdateWork_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_ReadChapters_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["workID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["workID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_UserAnimes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1390,6 +1662,21 @@ func (ec *executionContext) field_Query_UserWorks_args(ctx context.Context, rawA
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_WatchedEpisodes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["animeID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("animeID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["animeID"] = arg0
 	return args, nil
 }
 
@@ -2864,6 +3151,326 @@ func (ec *executionContext) fieldContext_Mutation_DeleteWork(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_MarkEpisodeWatched(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_MarkEpisodeWatched(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().MarkEpisodeWatched(rctx, fc.Args["input"].(model.MarkEpisodeInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.WatchedEpisode); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.WatchedEpisode`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.WatchedEpisode)
+	fc.Result = res
+	return ec.marshalNWatchedEpisode2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_MarkEpisodeWatched(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WatchedEpisode_id(ctx, field)
+			case "animeID":
+				return ec.fieldContext_WatchedEpisode_animeID(ctx, field)
+			case "episodeNumber":
+				return ec.fieldContext_WatchedEpisode_episodeNumber(ctx, field)
+			case "watchedAt":
+				return ec.fieldContext_WatchedEpisode_watchedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WatchedEpisode", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_MarkEpisodeWatched_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_UnmarkEpisodeWatched(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_UnmarkEpisodeWatched(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnmarkEpisodeWatched(rctx, fc.Args["input"].(model.MarkEpisodeInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_UnmarkEpisodeWatched(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_UnmarkEpisodeWatched_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_MarkChapterRead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_MarkChapterRead(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().MarkChapterRead(rctx, fc.Args["input"].(model.MarkChapterInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.ReadChapter); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.ReadChapter`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ReadChapter)
+	fc.Result = res
+	return ec.marshalNReadChapter2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapter(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_MarkChapterRead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ReadChapter_id(ctx, field)
+			case "workID":
+				return ec.fieldContext_ReadChapter_workID(ctx, field)
+			case "chapterNumber":
+				return ec.fieldContext_ReadChapter_chapterNumber(ctx, field)
+			case "readAt":
+				return ec.fieldContext_ReadChapter_readAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReadChapter", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_MarkChapterRead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_UnmarkChapterRead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_UnmarkChapterRead(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnmarkChapterRead(rctx, fc.Args["input"].(model.MarkChapterInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_UnmarkChapterRead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_UnmarkChapterRead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_UserLists(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_UserLists(ctx, field)
 	if err != nil {
@@ -3111,6 +3718,176 @@ func (ec *executionContext) fieldContext_Query_UserWorks(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_WatchedEpisodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_WatchedEpisodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().WatchedEpisodes(rctx, fc.Args["animeID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.WatchedEpisode); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/weeb-vip/list-service/graph/model.WatchedEpisode`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.WatchedEpisode)
+	fc.Result = res
+	return ec.marshalNWatchedEpisode2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisodeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_WatchedEpisodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WatchedEpisode_id(ctx, field)
+			case "animeID":
+				return ec.fieldContext_WatchedEpisode_animeID(ctx, field)
+			case "episodeNumber":
+				return ec.fieldContext_WatchedEpisode_episodeNumber(ctx, field)
+			case "watchedAt":
+				return ec.fieldContext_WatchedEpisode_watchedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WatchedEpisode", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_WatchedEpisodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_ReadChapters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_ReadChapters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ReadChapters(rctx, fc.Args["workID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.ReadChapter); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/weeb-vip/list-service/graph/model.ReadChapter`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ReadChapter)
+	fc.Result = res
+	return ec.marshalNReadChapter2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapterᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_ReadChapters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ReadChapter_id(ctx, field)
+			case "workID":
+				return ec.fieldContext_ReadChapter_workID(ctx, field)
+			case "chapterNumber":
+				return ec.fieldContext_ReadChapter_chapterNumber(ctx, field)
+			case "readAt":
+				return ec.fieldContext_ReadChapter_readAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReadChapter", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_ReadChapters_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query__entities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query__entities(ctx, field)
 	if err != nil {
@@ -3338,6 +4115,179 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadChapter_id(ctx context.Context, field graphql.CollectedField, obj *model.ReadChapter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReadChapter_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReadChapter_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadChapter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadChapter_workID(ctx context.Context, field graphql.CollectedField, obj *model.ReadChapter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReadChapter_workID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReadChapter_workID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadChapter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadChapter_chapterNumber(ctx context.Context, field graphql.CollectedField, obj *model.ReadChapter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReadChapter_chapterNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChapterNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReadChapter_chapterNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadChapter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadChapter_readAt(ctx context.Context, field graphql.CollectedField, obj *model.ReadChapter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReadChapter_readAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReadAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReadChapter_readAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadChapter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5206,6 +6156,179 @@ func (ec *executionContext) fieldContext_UserWorkPaginated_works(ctx context.Con
 				return ec.fieldContext_UserWork_deletedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WatchedEpisode_id(ctx context.Context, field graphql.CollectedField, obj *model.WatchedEpisode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WatchedEpisode_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WatchedEpisode_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WatchedEpisode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WatchedEpisode_animeID(ctx context.Context, field graphql.CollectedField, obj *model.WatchedEpisode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WatchedEpisode_animeID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AnimeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WatchedEpisode_animeID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WatchedEpisode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WatchedEpisode_episodeNumber(ctx context.Context, field graphql.CollectedField, obj *model.WatchedEpisode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WatchedEpisode_episodeNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpisodeNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WatchedEpisode_episodeNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WatchedEpisode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WatchedEpisode_watchedAt(ctx context.Context, field graphql.CollectedField, obj *model.WatchedEpisode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WatchedEpisode_watchedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WatchedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WatchedEpisode_watchedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WatchedEpisode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7136,6 +8259,100 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputMarkChapterInput(ctx context.Context, obj interface{}) (model.MarkChapterInput, error) {
+	var it model.MarkChapterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"workID", "chapterNumber", "readAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "workID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkID = data
+		case "chapterNumber":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chapterNumber"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChapterNumber = data
+		case "readAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("readAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReadAt = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMarkEpisodeInput(ctx context.Context, obj interface{}) (model.MarkEpisodeInput, error) {
+	var it model.MarkEpisodeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"animeID", "episodeNumber", "watchedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "animeID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("animeID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AnimeID = data
+		case "episodeNumber":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("episodeNumber"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EpisodeNumber = data
+		case "watchedAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("watchedAt"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WatchedAt = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserAnimeInput(ctx context.Context, obj interface{}) (model.UserAnimeInput, error) {
 	var it model.UserAnimeInput
 	asMap := map[string]interface{}{}
@@ -7991,6 +9208,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "MarkEpisodeWatched":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_MarkEpisodeWatched(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "UnmarkEpisodeWatched":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_UnmarkEpisodeWatched(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "MarkChapterRead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_MarkChapterRead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "UnmarkChapterRead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_UnmarkChapterRead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8090,6 +9335,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "WatchedEpisodes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_WatchedEpisodes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "ReadChapters":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ReadChapters(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "_entities":
 			field := field
 
@@ -8142,6 +9431,57 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var readChapterImplementors = []string{"ReadChapter"}
+
+func (ec *executionContext) _ReadChapter(ctx context.Context, sel ast.SelectionSet, obj *model.ReadChapter) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, readChapterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReadChapter")
+		case "id":
+			out.Values[i] = ec._ReadChapter_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "workID":
+			out.Values[i] = ec._ReadChapter_workID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "chapterNumber":
+			out.Values[i] = ec._ReadChapter_chapterNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "readAt":
+			out.Values[i] = ec._ReadChapter_readAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8449,6 +9789,57 @@ func (ec *executionContext) _UserWorkPaginated(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var watchedEpisodeImplementors = []string{"WatchedEpisode"}
+
+func (ec *executionContext) _WatchedEpisode(ctx context.Context, sel ast.SelectionSet, obj *model.WatchedEpisode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, watchedEpisodeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WatchedEpisode")
+		case "id":
+			out.Values[i] = ec._WatchedEpisode_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "animeID":
+			out.Values[i] = ec._WatchedEpisode_animeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "episodeNumber":
+			out.Values[i] = ec._WatchedEpisode_episodeNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "watchedAt":
+			out.Values[i] = ec._WatchedEpisode_watchedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9008,6 +10399,74 @@ func (ec *executionContext) marshalNListServiceAPI2ᚖgithubᚗcomᚋweebᚑvip�
 	return ec._ListServiceAPI(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNMarkChapterInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkChapterInput(ctx context.Context, v interface{}) (model.MarkChapterInput, error) {
+	res, err := ec.unmarshalInputMarkChapterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMarkEpisodeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐMarkEpisodeInput(ctx context.Context, v interface{}) (model.MarkEpisodeInput, error) {
+	res, err := ec.unmarshalInputMarkEpisodeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNReadChapter2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapter(ctx context.Context, sel ast.SelectionSet, v model.ReadChapter) graphql.Marshaler {
+	return ec._ReadChapter(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNReadChapter2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ReadChapter) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNReadChapter2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapter(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNReadChapter2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐReadChapter(ctx context.Context, sel ast.SelectionSet, v *model.ReadChapter) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReadChapter(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9176,6 +10635,64 @@ func (ec *executionContext) unmarshalNUserWorkInput2githubᚗcomᚋweebᚑvipᚋ
 func (ec *executionContext) unmarshalNUserWorksInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorksInput(ctx context.Context, v interface{}) (model.UserWorksInput, error) {
 	res, err := ec.unmarshalInputUserWorksInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNWatchedEpisode2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisode(ctx context.Context, sel ast.SelectionSet, v model.WatchedEpisode) graphql.Marshaler {
+	return ec._WatchedEpisode(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWatchedEpisode2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.WatchedEpisode) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWatchedEpisode2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisode(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNWatchedEpisode2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWatchedEpisode(ctx context.Context, sel ast.SelectionSet, v *model.WatchedEpisode) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WatchedEpisode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWork2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐWork(ctx context.Context, sel ast.SelectionSet, v model.Work) graphql.Marshaler {
