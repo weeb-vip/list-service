@@ -3,12 +3,12 @@ package user_anime
 import (
 	"context"
 	"errors"
-	"time"
 	"github.com/google/uuid"
+	metrics_lib "github.com/weeb-vip/go-metrics-lib"
 	"github.com/weeb-vip/list-service/internal/db"
 	"github.com/weeb-vip/list-service/metrics"
-	metrics_lib "github.com/weeb-vip/go-metrics-lib"
 	"gorm.io/gorm"
+	"time"
 )
 
 type UserAnimeRepositoryImpl interface {
@@ -18,6 +18,7 @@ type UserAnimeRepositoryImpl interface {
 	FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error)
 	FindByUserIdAndAnimeIds(ctx context.Context, userId string, animeIds []string) ([]*UserAnime, error)
+	CountByStatus(ctx context.Context, userId string) (map[string]int64, error)
 	FindByListId(ctx context.Context, listId string) ([]*UserAnime, error)
 }
 
@@ -320,4 +321,51 @@ func (a *UserAnimeRepository) FindByListId(ctx context.Context, listId string) (
 		Env:     metrics.GetCurrentEnv(),
 	})
 	return userAnimes, nil
+}
+
+// CountByStatus returns how many anime the user has in each status, grouped in
+// one query rather than counted a tab at a time.
+//
+// Model(&UserAnime{}) so gorm applies the soft-delete scope, and the Env label
+// is set on the metric here -- the count query the list page fires on every
+// load is not one to leave unlabelled.
+func (a *UserAnimeRepository) CountByStatus(ctx context.Context, userId string) (map[string]int64, error) {
+	startTime := time.Now()
+
+	type statusCount struct {
+		Status string
+		Count  int64
+	}
+	var rows []statusCount
+	err := a.db.DB.WithContext(ctx).
+		Model(&UserAnime{}).
+		Select("status, COUNT(*) as count").
+		Where("user_id = ? AND status IS NOT NULL", userId).
+		Group("status").
+		Scan(&rows).Error
+	if err != nil {
+		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
+			Service: metrics.GetServiceName(),
+			Table:   "user_anime",
+			Method:  metrics_lib.DatabaseMetricMethodSelect,
+			Result:  metrics_lib.Error,
+			Env:     metrics.GetCurrentEnv(),
+		})
+		return nil, err
+	}
+
+	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
+		Service: metrics.GetServiceName(),
+		Table:   "user_anime",
+		Method:  metrics_lib.DatabaseMetricMethodSelect,
+		Result:  metrics_lib.Success,
+		Env:     metrics.GetCurrentEnv(),
+	})
+
+	counts := make(map[string]int64, len(rows))
+	for _, row := range rows {
+		counts[row.Status] = row.Count
+	}
+
+	return counts, nil
 }

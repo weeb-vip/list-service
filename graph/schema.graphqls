@@ -18,6 +18,8 @@ type Query {
     UserLists: [UserList!] @Authenticated
     UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
+    UserAnimeStatusCounts: UserAnimeStatusCounts! @Authenticated
+    UserWorkStatusCounts: UserWorkStatusCounts! @Authenticated
     WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
     ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
