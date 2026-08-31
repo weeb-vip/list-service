@@ -47,6 +47,7 @@ type UserAnimeServiceImpl interface {
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*user_anime.UserAnime, int64, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*user_anime.UserAnime, error)
 	FindByUserIdAndAnimeIds(ctx context.Context, userId string, animeIds []string) ([]*user_anime.UserAnime, error)
+	CountByStatus(ctx context.Context, userID string) (map[string]int64, error)
 }
 
 type UserAnimeService struct {
@@ -146,4 +147,8 @@ func (a *UserAnimeService) FindByUserIdAndAnimeIds(ctx context.Context, userId s
 	}
 
 	return userAnimes, nil
+}
+
+func (a *UserAnimeService) CountByStatus(ctx context.Context, userID string) (map[string]int64, error) {
+	return a.Repository.CountByStatus(ctx, userID)
 }

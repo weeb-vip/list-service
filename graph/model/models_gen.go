@@ -87,6 +87,21 @@ type UserAnimePaginated struct {
 	Animes []*UserAnime `json:"animes"`
 }
 
+// How many anime the viewer has in each status.
+//
+// One field per status rather than a list of (status, count) pairs: the set is
+// fixed and small, and named fields let a client read watching or completed
+// directly instead of scanning for it. A status with no entries is a real zero,
+// not an absent row -- the resolver fills every field so a tab can always show a
+// number.
+type UserAnimeStatusCounts struct {
+	Watching    string `json:"watching"`
+	PlanToWatch string `json:"planToWatch"`
+	Completed   string `json:"completed"`
+	OnHold      string `json:"onHold"`
+	Dropped     string `json:"dropped"`
+}
+
 type UserAnimesInput struct {
 	Status *Status `json:"status,omitempty"`
 	Page   int     `json:"page"`
@@ -155,6 +170,15 @@ type UserWorkPaginated struct {
 	Limit int         `json:"limit"`
 	Total string      `json:"total"`
 	Works []*UserWork `json:"works"`
+}
+
+// The reading counterpart of UserAnimeStatusCounts.
+type UserWorkStatusCounts struct {
+	Reading    string `json:"reading"`
+	PlanToRead string `json:"planToRead"`
+	Completed  string `json:"completed"`
+	OnHold     string `json:"onHold"`
+	Dropped    string `json:"dropped"`
 }
 
 type UserWorksInput struct {

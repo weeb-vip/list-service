@@ -90,13 +90,15 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ReadChapters       func(childComplexity int, workID string) int
-		UserAnimes         func(childComplexity int, input model.UserAnimesInput) int
-		UserLists          func(childComplexity int) int
-		UserWorks          func(childComplexity int, input model.UserWorksInput) int
-		WatchedEpisodes    func(childComplexity int, animeID string) int
-		__resolve__service func(childComplexity int) int
-		__resolve_entities func(childComplexity int, representations []map[string]interface{}) int
+		ReadChapters          func(childComplexity int, workID string) int
+		UserAnimeStatusCounts func(childComplexity int) int
+		UserAnimes            func(childComplexity int, input model.UserAnimesInput) int
+		UserLists             func(childComplexity int) int
+		UserWorkStatusCounts  func(childComplexity int) int
+		UserWorks             func(childComplexity int, input model.UserWorksInput) int
+		WatchedEpisodes       func(childComplexity int, animeID string) int
+		__resolve__service    func(childComplexity int) int
+		__resolve_entities    func(childComplexity int, representations []map[string]interface{}) int
 	}
 
 	ReadChapter struct {
@@ -127,6 +129,14 @@ type ComplexityRoot struct {
 		Limit  func(childComplexity int) int
 		Page   func(childComplexity int) int
 		Total  func(childComplexity int) int
+	}
+
+	UserAnimeStatusCounts struct {
+		Completed   func(childComplexity int) int
+		Dropped     func(childComplexity int) int
+		OnHold      func(childComplexity int) int
+		PlanToWatch func(childComplexity int) int
+		Watching    func(childComplexity int) int
 	}
 
 	UserList struct {
@@ -162,6 +172,14 @@ type ComplexityRoot struct {
 		Page  func(childComplexity int) int
 		Total func(childComplexity int) int
 		Works func(childComplexity int) int
+	}
+
+	UserWorkStatusCounts struct {
+		Completed  func(childComplexity int) int
+		Dropped    func(childComplexity int) int
+		OnHold     func(childComplexity int) int
+		PlanToRead func(childComplexity int) int
+		Reading    func(childComplexity int) int
 	}
 
 	WatchedEpisode struct {
@@ -213,6 +231,8 @@ type QueryResolver interface {
 	UserLists(ctx context.Context) ([]*model.UserList, error)
 	UserAnimes(ctx context.Context, input model.UserAnimesInput) (*model.UserAnimePaginated, error)
 	UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error)
+	UserAnimeStatusCounts(ctx context.Context) (*model.UserAnimeStatusCounts, error)
+	UserWorkStatusCounts(ctx context.Context) (*model.UserWorkStatusCounts, error)
 	WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error)
 	ReadChapters(ctx context.Context, workID string) ([]*model.ReadChapter, error)
 }
@@ -498,6 +518,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ReadChapters(childComplexity, args["workID"].(string)), true
 
+	case "Query.UserAnimeStatusCounts":
+		if e.complexity.Query.UserAnimeStatusCounts == nil {
+			break
+		}
+
+		return e.complexity.Query.UserAnimeStatusCounts(childComplexity), true
+
 	case "Query.UserAnimes":
 		if e.complexity.Query.UserAnimes == nil {
 			break
@@ -516,6 +543,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.UserLists(childComplexity), true
+
+	case "Query.UserWorkStatusCounts":
+		if e.complexity.Query.UserWorkStatusCounts == nil {
+			break
+		}
+
+		return e.complexity.Query.UserWorkStatusCounts(childComplexity), true
 
 	case "Query.UserWorks":
 		if e.complexity.Query.UserWorks == nil {
@@ -707,6 +741,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UserAnimePaginated.Total(childComplexity), true
 
+	case "UserAnimeStatusCounts.completed":
+		if e.complexity.UserAnimeStatusCounts.Completed == nil {
+			break
+		}
+
+		return e.complexity.UserAnimeStatusCounts.Completed(childComplexity), true
+
+	case "UserAnimeStatusCounts.dropped":
+		if e.complexity.UserAnimeStatusCounts.Dropped == nil {
+			break
+		}
+
+		return e.complexity.UserAnimeStatusCounts.Dropped(childComplexity), true
+
+	case "UserAnimeStatusCounts.onHold":
+		if e.complexity.UserAnimeStatusCounts.OnHold == nil {
+			break
+		}
+
+		return e.complexity.UserAnimeStatusCounts.OnHold(childComplexity), true
+
+	case "UserAnimeStatusCounts.planToWatch":
+		if e.complexity.UserAnimeStatusCounts.PlanToWatch == nil {
+			break
+		}
+
+		return e.complexity.UserAnimeStatusCounts.PlanToWatch(childComplexity), true
+
+	case "UserAnimeStatusCounts.watching":
+		if e.complexity.UserAnimeStatusCounts.Watching == nil {
+			break
+		}
+
+		return e.complexity.UserAnimeStatusCounts.Watching(childComplexity), true
+
 	case "UserList.createdAt":
 		if e.complexity.UserList.CreatedAt == nil {
 			break
@@ -888,6 +957,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UserWorkPaginated.Works(childComplexity), true
+
+	case "UserWorkStatusCounts.completed":
+		if e.complexity.UserWorkStatusCounts.Completed == nil {
+			break
+		}
+
+		return e.complexity.UserWorkStatusCounts.Completed(childComplexity), true
+
+	case "UserWorkStatusCounts.dropped":
+		if e.complexity.UserWorkStatusCounts.Dropped == nil {
+			break
+		}
+
+		return e.complexity.UserWorkStatusCounts.Dropped(childComplexity), true
+
+	case "UserWorkStatusCounts.onHold":
+		if e.complexity.UserWorkStatusCounts.OnHold == nil {
+			break
+		}
+
+		return e.complexity.UserWorkStatusCounts.OnHold(childComplexity), true
+
+	case "UserWorkStatusCounts.planToRead":
+		if e.complexity.UserWorkStatusCounts.PlanToRead == nil {
+			break
+		}
+
+		return e.complexity.UserWorkStatusCounts.PlanToRead(childComplexity), true
+
+	case "UserWorkStatusCounts.reading":
+		if e.complexity.UserWorkStatusCounts.Reading == nil {
+			break
+		}
+
+		return e.complexity.UserWorkStatusCounts.Reading(childComplexity), true
 
 	case "WatchedEpisode.animeID":
 		if e.complexity.WatchedEpisode.AnimeID == nil {
@@ -1099,6 +1203,8 @@ type Query {
     UserLists: [UserList!] @Authenticated
     UserAnimes(input: UserAnimesInput!): UserAnimePaginated @Authenticated
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
+    UserAnimeStatusCounts: UserAnimeStatusCounts! @Authenticated
+    UserWorkStatusCounts: UserWorkStatusCounts! @Authenticated
     WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
     ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
@@ -1251,6 +1357,32 @@ enum WorkStatus {
     ONHOLD
     DROPPED
     PLANTOREAD
+}
+
+"""
+How many anime the viewer has in each status.
+
+One field per status rather than a list of (status, count) pairs: the set is
+fixed and small, and named fields let a client read watching or completed
+directly instead of scanning for it. A status with no entries is a real zero,
+not an absent row -- the resolver fills every field so a tab can always show a
+number.
+"""
+type UserAnimeStatusCounts {
+    watching: Int64!
+    planToWatch: Int64!
+    completed: Int64!
+    onHold: Int64!
+    dropped: Int64!
+}
+
+"The reading counterpart of UserAnimeStatusCounts."
+type UserWorkStatusCounts {
+    reading: Int64!
+    planToRead: Int64!
+    completed: Int64!
+    onHold: Int64!
+    dropped: Int64!
 }
 
 # The viewer's own row on a work, the way userAnime hangs off an Anime. Requires
@@ -3718,6 +3850,158 @@ func (ec *executionContext) fieldContext_Query_UserWorks(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_UserAnimeStatusCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_UserAnimeStatusCounts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserAnimeStatusCounts(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserAnimeStatusCounts); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserAnimeStatusCounts`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnimeStatusCounts)
+	fc.Result = res
+	return ec.marshalNUserAnimeStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeStatusCounts(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_UserAnimeStatusCounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "watching":
+				return ec.fieldContext_UserAnimeStatusCounts_watching(ctx, field)
+			case "planToWatch":
+				return ec.fieldContext_UserAnimeStatusCounts_planToWatch(ctx, field)
+			case "completed":
+				return ec.fieldContext_UserAnimeStatusCounts_completed(ctx, field)
+			case "onHold":
+				return ec.fieldContext_UserAnimeStatusCounts_onHold(ctx, field)
+			case "dropped":
+				return ec.fieldContext_UserAnimeStatusCounts_dropped(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnimeStatusCounts", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_UserWorkStatusCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_UserWorkStatusCounts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().UserWorkStatusCounts(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.UserWorkStatusCounts); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.UserWorkStatusCounts`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWorkStatusCounts)
+	fc.Result = res
+	return ec.marshalNUserWorkStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkStatusCounts(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_UserWorkStatusCounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "reading":
+				return ec.fieldContext_UserWorkStatusCounts_reading(ctx, field)
+			case "planToRead":
+				return ec.fieldContext_UserWorkStatusCounts_planToRead(ctx, field)
+			case "completed":
+				return ec.fieldContext_UserWorkStatusCounts_completed(ctx, field)
+			case "onHold":
+				return ec.fieldContext_UserWorkStatusCounts_onHold(ctx, field)
+			case "dropped":
+				return ec.fieldContext_UserWorkStatusCounts_dropped(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWorkStatusCounts", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_WatchedEpisodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_WatchedEpisodes(ctx, field)
 	if err != nil {
@@ -5039,6 +5323,226 @@ func (ec *executionContext) fieldContext_UserAnimePaginated_animes(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _UserAnimeStatusCounts_watching(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimeStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimeStatusCounts_watching(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Watching, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimeStatusCounts_watching(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimeStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimeStatusCounts_planToWatch(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimeStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimeStatusCounts_planToWatch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PlanToWatch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimeStatusCounts_planToWatch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimeStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimeStatusCounts_completed(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimeStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimeStatusCounts_completed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Completed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimeStatusCounts_completed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimeStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimeStatusCounts_onHold(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimeStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimeStatusCounts_onHold(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OnHold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimeStatusCounts_onHold(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimeStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserAnimeStatusCounts_dropped(ctx context.Context, field graphql.CollectedField, obj *model.UserAnimeStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserAnimeStatusCounts_dropped(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dropped, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserAnimeStatusCounts_dropped(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserAnimeStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UserList_id(ctx context.Context, field graphql.CollectedField, obj *model.UserList) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserList_id(ctx, field)
 	if err != nil {
@@ -6156,6 +6660,226 @@ func (ec *executionContext) fieldContext_UserWorkPaginated_works(ctx context.Con
 				return ec.fieldContext_UserWork_deletedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserWork", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkStatusCounts_reading(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkStatusCounts_reading(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reading, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkStatusCounts_reading(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkStatusCounts_planToRead(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkStatusCounts_planToRead(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PlanToRead, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkStatusCounts_planToRead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkStatusCounts_completed(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkStatusCounts_completed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Completed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkStatusCounts_completed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkStatusCounts_onHold(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkStatusCounts_onHold(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OnHold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkStatusCounts_onHold(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserWorkStatusCounts_dropped(ctx context.Context, field graphql.CollectedField, obj *model.UserWorkStatusCounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserWorkStatusCounts_dropped(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dropped, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNInt642string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserWorkStatusCounts_dropped(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserWorkStatusCounts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9335,6 +10059,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "UserAnimeStatusCounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_UserAnimeStatusCounts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "UserWorkStatusCounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_UserWorkStatusCounts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "WatchedEpisodes":
 			field := field
 
@@ -9628,6 +10396,65 @@ func (ec *executionContext) _UserAnimePaginated(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var userAnimeStatusCountsImplementors = []string{"UserAnimeStatusCounts"}
+
+func (ec *executionContext) _UserAnimeStatusCounts(ctx context.Context, sel ast.SelectionSet, obj *model.UserAnimeStatusCounts) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userAnimeStatusCountsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserAnimeStatusCounts")
+		case "watching":
+			out.Values[i] = ec._UserAnimeStatusCounts_watching(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "planToWatch":
+			out.Values[i] = ec._UserAnimeStatusCounts_planToWatch(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completed":
+			out.Values[i] = ec._UserAnimeStatusCounts_completed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "onHold":
+			out.Values[i] = ec._UserAnimeStatusCounts_onHold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dropped":
+			out.Values[i] = ec._UserAnimeStatusCounts_dropped(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var userListImplementors = []string{"UserList", "_Entity"}
 
 func (ec *executionContext) _UserList(ctx context.Context, sel ast.SelectionSet, obj *model.UserList) graphql.Marshaler {
@@ -9786,6 +10613,65 @@ func (ec *executionContext) _UserWorkPaginated(ctx context.Context, sel ast.Sele
 			}
 		case "works":
 			out.Values[i] = ec._UserWorkPaginated_works(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userWorkStatusCountsImplementors = []string{"UserWorkStatusCounts"}
+
+func (ec *executionContext) _UserWorkStatusCounts(ctx context.Context, sel ast.SelectionSet, obj *model.UserWorkStatusCounts) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userWorkStatusCountsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserWorkStatusCounts")
+		case "reading":
+			out.Values[i] = ec._UserWorkStatusCounts_reading(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "planToRead":
+			out.Values[i] = ec._UserWorkStatusCounts_planToRead(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completed":
+			out.Values[i] = ec._UserWorkStatusCounts_completed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "onHold":
+			out.Values[i] = ec._UserWorkStatusCounts_onHold(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dropped":
+			out.Values[i] = ec._UserWorkStatusCounts_dropped(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -10545,6 +11431,20 @@ func (ec *executionContext) unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvip�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNUserAnimeStatusCounts2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeStatusCounts(ctx context.Context, sel ast.SelectionSet, v model.UserAnimeStatusCounts) graphql.Marshaler {
+	return ec._UserAnimeStatusCounts(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserAnimeStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeStatusCounts(ctx context.Context, sel ast.SelectionSet, v *model.UserAnimeStatusCounts) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserAnimeStatusCounts(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNUserAnimesInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimesInput(ctx context.Context, v interface{}) (model.UserAnimesInput, error) {
 	res, err := ec.unmarshalInputUserAnimesInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10630,6 +11530,20 @@ func (ec *executionContext) marshalNUserWork2ᚖgithubᚗcomᚋweebᚑvipᚋlist
 func (ec *executionContext) unmarshalNUserWorkInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkInput(ctx context.Context, v interface{}) (model.UserWorkInput, error) {
 	res, err := ec.unmarshalInputUserWorkInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserWorkStatusCounts2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkStatusCounts(ctx context.Context, sel ast.SelectionSet, v model.UserWorkStatusCounts) graphql.Marshaler {
+	return ec._UserWorkStatusCounts(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserWorkStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkStatusCounts(ctx context.Context, sel ast.SelectionSet, v *model.UserWorkStatusCounts) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserWorkStatusCounts(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserWorksInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorksInput(ctx context.Context, v interface{}) (model.UserWorksInput, error) {

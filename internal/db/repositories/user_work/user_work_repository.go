@@ -20,6 +20,7 @@ type UserWorkRepositoryImpl interface {
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserWork, int64, error)
 	FindByUserIdAndWorkId(ctx context.Context, userId string, workId string) (*UserWork, error)
 	FindByUserIdAndWorkIds(ctx context.Context, userId string, workIds []string) ([]*UserWork, error)
+	CountByStatus(ctx context.Context, userId string) (map[string]int64, error)
 }
 
 type UserWorkRepository struct {
@@ -186,4 +187,40 @@ func (r *UserWorkRepository) FindByUserIdAndWorkIds(ctx context.Context, userId 
 	record(startTime, metrics_lib.DatabaseMetricMethodSelect, metrics_lib.Success)
 
 	return userWorks, nil
+}
+
+// CountByStatus returns how many works the reader has in each status, in one
+// grouped query rather than a count per tab.
+//
+// Model(&UserWork{}) so gorm applies the soft-delete scope: a removed row must
+// not be counted, exactly as it is not listed. The map is keyed by the stored
+// status string; a status with no rows is simply absent, and the caller fills
+// the zero.
+func (r *UserWorkRepository) CountByStatus(ctx context.Context, userId string) (map[string]int64, error) {
+	startTime := time.Now()
+
+	type statusCount struct {
+		Status string
+		Count  int64
+	}
+	var rows []statusCount
+	err := r.db.DB.WithContext(ctx).
+		Model(&UserWork{}).
+		Select("status, COUNT(*) as count").
+		Where("user_id = ? AND status IS NOT NULL", userId).
+		Group("status").
+		Scan(&rows).Error
+	if err != nil {
+		record(startTime, metrics_lib.DatabaseMetricMethodSelect, metrics_lib.Error)
+		return nil, err
+	}
+
+	record(startTime, metrics_lib.DatabaseMetricMethodSelect, metrics_lib.Success)
+
+	counts := make(map[string]int64, len(rows))
+	for _, row := range rows {
+		counts[row.Status] = row.Count
+	}
+
+	return counts, nil
 }

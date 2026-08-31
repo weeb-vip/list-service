@@ -53,6 +53,7 @@ type UserWorkServiceImpl interface {
 	FindByUserId(ctx context.Context, userID string, status *string, page int, limit int) ([]*user_work.UserWork, int64, error)
 	FindByUserIdAndWorkId(ctx context.Context, userID string, workID string) (*user_work.UserWork, error)
 	FindByUserIdAndWorkIds(ctx context.Context, userID string, workIDs []string) ([]*user_work.UserWork, error)
+	CountByStatus(ctx context.Context, userID string) (map[string]int64, error)
 }
 
 type UserWorkService struct {
@@ -127,4 +128,8 @@ func (s *UserWorkService) FindByUserIdAndWorkId(ctx context.Context, userID stri
 
 func (s *UserWorkService) FindByUserIdAndWorkIds(ctx context.Context, userID string, workIDs []string) ([]*user_work.UserWork, error) {
 	return s.Repository.FindByUserIdAndWorkIds(ctx, userID, workIDs)
+}
+
+func (s *UserWorkService) CountByStatus(ctx context.Context, userID string) (map[string]int64, error) {
+	return s.Repository.CountByStatus(ctx, userID)
 }

@@ -115,6 +115,16 @@ func (r *queryResolver) UserWorks(ctx context.Context, input model.UserWorksInpu
 	return resolvers.UserWorks(ctx, r.UserWorkService, input)
 }
 
+// UserAnimeStatusCounts is the resolver for the UserAnimeStatusCounts field.
+func (r *queryResolver) UserAnimeStatusCounts(ctx context.Context) (*model.UserAnimeStatusCounts, error) {
+	return resolvers.UserAnimeStatusCounts(ctx, r.UserAnimeService)
+}
+
+// UserWorkStatusCounts is the resolver for the UserWorkStatusCounts field.
+func (r *queryResolver) UserWorkStatusCounts(ctx context.Context) (*model.UserWorkStatusCounts, error) {
+	return resolvers.UserWorkStatusCounts(ctx, r.UserWorkService)
+}
+
 // WatchedEpisodes is the resolver for the WatchedEpisodes field.
 func (r *queryResolver) WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error) {
 	return resolvers.WatchedEpisodes(ctx, r.UserProgressService, animeID)
