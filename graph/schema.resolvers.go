@@ -125,6 +125,26 @@ func (r *queryResolver) UserWorkStatusCounts(ctx context.Context) (*model.UserWo
 	return resolvers.UserWorkStatusCounts(ctx, r.UserWorkService)
 }
 
+// PublicUserAnimes is the resolver for the PublicUserAnimes field.
+func (r *queryResolver) PublicUserAnimes(ctx context.Context, userID string, input model.UserAnimesInput) (*model.UserAnimePaginated, error) {
+	return resolvers.PublicUserAnimes(ctx, r.UserAnimeService, userID, input)
+}
+
+// PublicUserWorks is the resolver for the PublicUserWorks field.
+func (r *queryResolver) PublicUserWorks(ctx context.Context, userID string, input model.UserWorksInput) (*model.UserWorkPaginated, error) {
+	return resolvers.PublicUserWorks(ctx, r.UserWorkService, userID, input)
+}
+
+// PublicUserAnimeStatusCounts is the resolver for the PublicUserAnimeStatusCounts field.
+func (r *queryResolver) PublicUserAnimeStatusCounts(ctx context.Context, userID string) (*model.UserAnimeStatusCounts, error) {
+	return resolvers.PublicUserAnimeStatusCounts(ctx, r.UserAnimeService, userID)
+}
+
+// PublicUserWorkStatusCounts is the resolver for the PublicUserWorkStatusCounts field.
+func (r *queryResolver) PublicUserWorkStatusCounts(ctx context.Context, userID string) (*model.UserWorkStatusCounts, error) {
+	return resolvers.PublicUserWorkStatusCounts(ctx, r.UserWorkService, userID)
+}
+
 // WatchedEpisodes is the resolver for the WatchedEpisodes field.
 func (r *queryResolver) WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error) {
 	return resolvers.WatchedEpisodes(ctx, r.UserProgressService, animeID)
