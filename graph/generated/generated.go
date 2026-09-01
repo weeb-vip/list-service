@@ -90,15 +90,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ReadChapters          func(childComplexity int, workID string) int
-		UserAnimeStatusCounts func(childComplexity int) int
-		UserAnimes            func(childComplexity int, input model.UserAnimesInput) int
-		UserLists             func(childComplexity int) int
-		UserWorkStatusCounts  func(childComplexity int) int
-		UserWorks             func(childComplexity int, input model.UserWorksInput) int
-		WatchedEpisodes       func(childComplexity int, animeID string) int
-		__resolve__service    func(childComplexity int) int
-		__resolve_entities    func(childComplexity int, representations []map[string]interface{}) int
+		PublicUserAnimeStatusCounts func(childComplexity int, userID string) int
+		PublicUserAnimes            func(childComplexity int, userID string, input model.UserAnimesInput) int
+		PublicUserWorkStatusCounts  func(childComplexity int, userID string) int
+		PublicUserWorks             func(childComplexity int, userID string, input model.UserWorksInput) int
+		ReadChapters                func(childComplexity int, workID string) int
+		UserAnimeStatusCounts       func(childComplexity int) int
+		UserAnimes                  func(childComplexity int, input model.UserAnimesInput) int
+		UserLists                   func(childComplexity int) int
+		UserWorkStatusCounts        func(childComplexity int) int
+		UserWorks                   func(childComplexity int, input model.UserWorksInput) int
+		WatchedEpisodes             func(childComplexity int, animeID string) int
+		__resolve__service          func(childComplexity int) int
+		__resolve_entities          func(childComplexity int, representations []map[string]interface{}) int
 	}
 
 	ReadChapter struct {
@@ -233,6 +237,10 @@ type QueryResolver interface {
 	UserWorks(ctx context.Context, input model.UserWorksInput) (*model.UserWorkPaginated, error)
 	UserAnimeStatusCounts(ctx context.Context) (*model.UserAnimeStatusCounts, error)
 	UserWorkStatusCounts(ctx context.Context) (*model.UserWorkStatusCounts, error)
+	PublicUserAnimes(ctx context.Context, userID string, input model.UserAnimesInput) (*model.UserAnimePaginated, error)
+	PublicUserWorks(ctx context.Context, userID string, input model.UserWorksInput) (*model.UserWorkPaginated, error)
+	PublicUserAnimeStatusCounts(ctx context.Context, userID string) (*model.UserAnimeStatusCounts, error)
+	PublicUserWorkStatusCounts(ctx context.Context, userID string) (*model.UserWorkStatusCounts, error)
 	WatchedEpisodes(ctx context.Context, animeID string) ([]*model.WatchedEpisode, error)
 	ReadChapters(ctx context.Context, workID string) ([]*model.ReadChapter, error)
 }
@@ -505,6 +513,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateWork(childComplexity, args["input"].(model.UserWorkInput)), true
+
+	case "Query.PublicUserAnimeStatusCounts":
+		if e.complexity.Query.PublicUserAnimeStatusCounts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_PublicUserAnimeStatusCounts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PublicUserAnimeStatusCounts(childComplexity, args["userID"].(string)), true
+
+	case "Query.PublicUserAnimes":
+		if e.complexity.Query.PublicUserAnimes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_PublicUserAnimes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PublicUserAnimes(childComplexity, args["userID"].(string), args["input"].(model.UserAnimesInput)), true
+
+	case "Query.PublicUserWorkStatusCounts":
+		if e.complexity.Query.PublicUserWorkStatusCounts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_PublicUserWorkStatusCounts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PublicUserWorkStatusCounts(childComplexity, args["userID"].(string)), true
+
+	case "Query.PublicUserWorks":
+		if e.complexity.Query.PublicUserWorks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_PublicUserWorks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PublicUserWorks(childComplexity, args["userID"].(string), args["input"].(model.UserWorksInput)), true
 
 	case "Query.ReadChapters":
 		if e.complexity.Query.ReadChapters == nil {
@@ -1205,6 +1261,15 @@ type Query {
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
     UserAnimeStatusCounts: UserAnimeStatusCounts! @Authenticated
     UserWorkStatusCounts: UserWorkStatusCounts! @Authenticated
+
+    # Public reads for another user's page, keyed on an explicit userID rather
+    # than the caller's own. Not @Authenticated: anyone can view a public page.
+    # These return data for any userID; whether a page shows them is gated above,
+    # by the viewed user's lists_public flag, at the page that composes them.
+    PublicUserAnimes(userID: String!, input: UserAnimesInput!): UserAnimePaginated
+    PublicUserWorks(userID: String!, input: UserWorksInput!): UserWorkPaginated
+    PublicUserAnimeStatusCounts(userID: String!): UserAnimeStatusCounts!
+    PublicUserWorkStatusCounts(userID: String!): UserWorkStatusCounts!
     WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
     ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
@@ -1749,6 +1814,84 @@ func (ec *executionContext) field_Mutation_UpdateWork_args(ctx context.Context, 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_PublicUserAnimeStatusCounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_PublicUserAnimes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	var arg1 model.UserAnimesInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNUserAnimesInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimesInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_PublicUserWorkStatusCounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_PublicUserWorks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	var arg1 model.UserWorksInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNUserWorksInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorksInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -3998,6 +4141,264 @@ func (ec *executionContext) fieldContext_Query_UserWorkStatusCounts(ctx context.
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserWorkStatusCounts", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_PublicUserAnimes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_PublicUserAnimes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PublicUserAnimes(rctx, fc.Args["userID"].(string), fc.Args["input"].(model.UserAnimesInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnimePaginated)
+	fc.Result = res
+	return ec.marshalOUserAnimePaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimePaginated(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_PublicUserAnimes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "page":
+				return ec.fieldContext_UserAnimePaginated_page(ctx, field)
+			case "limit":
+				return ec.fieldContext_UserAnimePaginated_limit(ctx, field)
+			case "total":
+				return ec.fieldContext_UserAnimePaginated_total(ctx, field)
+			case "animes":
+				return ec.fieldContext_UserAnimePaginated_animes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnimePaginated", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_PublicUserAnimes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_PublicUserWorks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_PublicUserWorks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PublicUserWorks(rctx, fc.Args["userID"].(string), fc.Args["input"].(model.UserWorksInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWorkPaginated)
+	fc.Result = res
+	return ec.marshalOUserWorkPaginated2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkPaginated(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_PublicUserWorks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "page":
+				return ec.fieldContext_UserWorkPaginated_page(ctx, field)
+			case "limit":
+				return ec.fieldContext_UserWorkPaginated_limit(ctx, field)
+			case "total":
+				return ec.fieldContext_UserWorkPaginated_total(ctx, field)
+			case "works":
+				return ec.fieldContext_UserWorkPaginated_works(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWorkPaginated", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_PublicUserWorks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_PublicUserAnimeStatusCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_PublicUserAnimeStatusCounts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PublicUserAnimeStatusCounts(rctx, fc.Args["userID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAnimeStatusCounts)
+	fc.Result = res
+	return ec.marshalNUserAnimeStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeStatusCounts(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_PublicUserAnimeStatusCounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "watching":
+				return ec.fieldContext_UserAnimeStatusCounts_watching(ctx, field)
+			case "planToWatch":
+				return ec.fieldContext_UserAnimeStatusCounts_planToWatch(ctx, field)
+			case "completed":
+				return ec.fieldContext_UserAnimeStatusCounts_completed(ctx, field)
+			case "onHold":
+				return ec.fieldContext_UserAnimeStatusCounts_onHold(ctx, field)
+			case "dropped":
+				return ec.fieldContext_UserAnimeStatusCounts_dropped(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserAnimeStatusCounts", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_PublicUserAnimeStatusCounts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_PublicUserWorkStatusCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_PublicUserWorkStatusCounts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PublicUserWorkStatusCounts(rctx, fc.Args["userID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserWorkStatusCounts)
+	fc.Result = res
+	return ec.marshalNUserWorkStatusCounts2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserWorkStatusCounts(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_PublicUserWorkStatusCounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "reading":
+				return ec.fieldContext_UserWorkStatusCounts_reading(ctx, field)
+			case "planToRead":
+				return ec.fieldContext_UserWorkStatusCounts_planToRead(ctx, field)
+			case "completed":
+				return ec.fieldContext_UserWorkStatusCounts_completed(ctx, field)
+			case "onHold":
+				return ec.fieldContext_UserWorkStatusCounts_onHold(ctx, field)
+			case "dropped":
+				return ec.fieldContext_UserWorkStatusCounts_dropped(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserWorkStatusCounts", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_PublicUserWorkStatusCounts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10091,6 +10492,88 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_UserWorkStatusCounts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "PublicUserAnimes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_PublicUserAnimes(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "PublicUserWorks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_PublicUserWorks(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "PublicUserAnimeStatusCounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_PublicUserAnimeStatusCounts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "PublicUserWorkStatusCounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_PublicUserWorkStatusCounts(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

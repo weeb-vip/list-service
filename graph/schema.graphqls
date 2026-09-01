@@ -20,6 +20,15 @@ type Query {
     UserWorks(input: UserWorksInput!): UserWorkPaginated @Authenticated
     UserAnimeStatusCounts: UserAnimeStatusCounts! @Authenticated
     UserWorkStatusCounts: UserWorkStatusCounts! @Authenticated
+
+    # Public reads for another user's page, keyed on an explicit userID rather
+    # than the caller's own. Not @Authenticated: anyone can view a public page.
+    # These return data for any userID; whether a page shows them is gated above,
+    # by the viewed user's lists_public flag, at the page that composes them.
+    PublicUserAnimes(userID: String!, input: UserAnimesInput!): UserAnimePaginated
+    PublicUserWorks(userID: String!, input: UserWorksInput!): UserWorkPaginated
+    PublicUserAnimeStatusCounts(userID: String!): UserAnimeStatusCounts!
+    PublicUserWorkStatusCounts(userID: String!): UserWorkStatusCounts!
     WatchedEpisodes(animeID: String!): [WatchedEpisode!]! @Authenticated
     ReadChapters(workID: String!): [ReadChapter!]! @Authenticated
 }
