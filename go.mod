@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.11
 
 require (
-	github.com/99designs/gqlgen v0.17.36
+	github.com/99designs/gqlgen v0.17.78
 	github.com/apache/pulsar-client-go v0.12.1
 	github.com/go-chi/chi v1.5.5
 	github.com/golang-migrate/migrate/v4 v4.17.0
@@ -19,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.11.1
-	github.com/vektah/gqlparser/v2 v2.5.8
+	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/weeb-vip/go-metrics-lib v1.0.3
 	github.com/weeb-vip/go-tracing-lib v1.0.0
 	go.opentelemetry.io/otel v1.38.0
@@ -86,6 +86,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/urfave/cli/v2 v2.25.5 // indirect
+	github.com/weeb-vip/go-outbox-lib v1.0.0
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0 // indirect

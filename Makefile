@@ -15,3 +15,9 @@ migrate-create:
 
 mocks:
 	echo "Generating mocks"
+test:
+	go test -count=1 ./...
+
+# The integration packages carry the `integration` build tag.
+test-integration:
+	cd integration-tests && go test -tags integration -count=1 -v ./...

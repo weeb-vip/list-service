@@ -8,7 +8,8 @@ type Config struct {
 	AppConfig     AppConfig `env:"APP_CONFIG"`
 	DBConfig      DBConfig
 	DataDogConfig DataDogConfig
-	PulsarConfig  PulsarConfig
+	NatsConfig    NatsConfig
+	OutboxConfig  OutboxConfig
 }
 
 type AppConfig struct {
@@ -33,9 +34,20 @@ type DataDogConfig struct {
 	DD_AGENT_PORT int    `env:"DD_AGENT_PORT" default:"8125"`
 }
 
-type PulsarConfig struct {
-	URL           string `default:"pulsar://localhost:6650" env:"PULSARURL"`
-	ProducerTopic string `default:"public/default/myanimelist.public.user-list" env:"PULSARPRODUCERTOPIC"`
+// NatsConfig is where `relay outbox` publishes. Only the URL: the subject is
+// on each outbox row, and the driver makes one stream per subject.
+type NatsConfig struct {
+	URL string `default:"nats://localhost:4222" env:"NATSURL"`
+}
+
+// OutboxConfig tunes the relay (go-outbox-lib). Zero values take the library
+// defaults.
+type OutboxConfig struct {
+	PollIntervalMs int `env:"OUTBOX_POLL_INTERVAL_MS" default:"250"`
+	BatchSize      int `env:"OUTBOX_BATCH_SIZE" default:"100"`
+	RetentionHours int `env:"OUTBOX_RETENTION_HOURS" default:"168"`
+	CleanupMinutes int `env:"OUTBOX_CLEANUP_INTERVAL_MINUTES" default:"60"`
+	BacklogSeconds int `env:"OUTBOX_BACKLOG_INTERVAL_SECONDS" default:"10"`
 }
 
 func LoadConfigOrPanic() Config {
