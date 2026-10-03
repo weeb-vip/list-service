@@ -36,337 +36,469 @@ func (ec *executionContext) __resolve__service(ctx context.Context) (fedruntime.
 	}, nil
 }
 
-func (ec *executionContext) __resolve_entities(ctx context.Context, representations []map[string]interface{}) []fedruntime.Entity {
+func (ec *executionContext) __resolve_entities(ctx context.Context, representations []map[string]any) []fedruntime.Entity {
 	list := make([]fedruntime.Entity, len(representations))
 
-	repsMap := map[string]struct {
-		i []int
-		r []map[string]interface{}
-	}{}
-
-	// We group entities by typename so that we can parallelize their resolution.
-	// This is particularly helpful when there are entity groups in multi mode.
-	buildRepresentationGroups := func(reps []map[string]interface{}) {
-		for i, rep := range reps {
-			typeName, ok := rep["__typename"].(string)
-			if !ok {
-				// If there is no __typename, we just skip the representation;
-				// we just won't be resolving these unknown types.
-				ec.Error(ctx, errors.New("__typename must be an existing string"))
-				continue
-			}
-
-			_r := repsMap[typeName]
-			_r.i = append(_r.i, i)
-			_r.r = append(_r.r, rep)
-			repsMap[typeName] = _r
-		}
-	}
-
-	isMulti := func(typeName string) bool {
-		switch typeName {
-		default:
-			return false
-		}
-	}
-
-	resolveEntity := func(ctx context.Context, typeName string, rep map[string]interface{}, idx []int, i int) (err error) {
-		// we need to do our own panic handling, because we may be called in a
-		// goroutine, where the usual panic handling can't catch us
-		defer func() {
-			if r := recover(); r != nil {
-				err = ec.Recover(ctx, r)
-			}
-		}()
-
-		switch typeName {
-		case "Anime":
-			resolverName, err := entityResolverNameForAnime(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "Anime": %w`, err)
-			}
-			switch resolverName {
-
-			case "findAnimeByID":
-				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findAnimeByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindAnimeByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Anime": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "ApiInfo":
-			resolverName, err := entityResolverNameForApiInfo(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "ApiInfo": %w`, err)
-			}
-			switch resolverName {
-
-			case "findApiInfoByName":
-				id0, err := ec.unmarshalNString2string(ctx, rep["name"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findApiInfoByName(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindAPIInfoByName(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "ApiInfo": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "UserAnime":
-			resolverName, err := entityResolverNameForUserAnime(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "UserAnime": %w`, err)
-			}
-			switch resolverName {
-
-			case "findUserAnimeByID":
-				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findUserAnimeByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindUserAnimeByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "UserAnime": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "UserList":
-			resolverName, err := entityResolverNameForUserList(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "UserList": %w`, err)
-			}
-			switch resolverName {
-
-			case "findUserListByID":
-				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findUserListByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindUserListByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "UserList": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "UserWork":
-			resolverName, err := entityResolverNameForUserWork(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "UserWork": %w`, err)
-			}
-			switch resolverName {
-
-			case "findUserWorkByID":
-				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findUserWorkByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindUserWorkByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "UserWork": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "Work":
-			resolverName, err := entityResolverNameForWork(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "Work": %w`, err)
-			}
-			switch resolverName {
-
-			case "findWorkByID":
-				id0, err := ec.unmarshalNID2string(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findWorkByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindWorkByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Work": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-
-		}
-		return fmt.Errorf("%w: %s", ErrUnknownType, typeName)
-	}
-
-	resolveManyEntities := func(ctx context.Context, typeName string, reps []map[string]interface{}, idx []int) (err error) {
-		// we need to do our own panic handling, because we may be called in a
-		// goroutine, where the usual panic handling can't catch us
-		defer func() {
-			if r := recover(); r != nil {
-				err = ec.Recover(ctx, r)
-			}
-		}()
-
-		switch typeName {
-
-		default:
-			return errors.New("unknown type: " + typeName)
-		}
-	}
-
-	resolveEntityGroup := func(typeName string, reps []map[string]interface{}, idx []int) {
-		if isMulti(typeName) {
-			err := resolveManyEntities(ctx, typeName, reps, idx)
-			if err != nil {
-				ec.Error(ctx, err)
-			}
-		} else {
-			// if there are multiple entities to resolve, parallelize (similar to
-			// graphql.FieldSet.Dispatch)
-			var e sync.WaitGroup
-			e.Add(len(reps))
-			for i, rep := range reps {
-				i, rep := i, rep
-				go func(i int, rep map[string]interface{}) {
-					err := resolveEntity(ctx, typeName, rep, idx, i)
-					if err != nil {
-						ec.Error(ctx, err)
-					}
-					e.Done()
-				}(i, rep)
-			}
-			e.Wait()
-		}
-	}
-	buildRepresentationGroups(representations)
+	repsMap := ec.buildRepresentationGroups(ctx, representations)
 
 	switch len(repsMap) {
 	case 0:
 		return list
 	case 1:
 		for typeName, reps := range repsMap {
-			resolveEntityGroup(typeName, reps.r, reps.i)
+			ec.resolveEntityGroup(ctx, typeName, reps, list)
 		}
 		return list
 	default:
 		var g sync.WaitGroup
 		g.Add(len(repsMap))
 		for typeName, reps := range repsMap {
-			go func(typeName string, reps []map[string]interface{}, idx []int) {
-				resolveEntityGroup(typeName, reps, idx)
+			go func(typeName string, reps []EntityWithIndex) {
+				ec.resolveEntityGroup(ctx, typeName, reps, list)
 				g.Done()
-			}(typeName, reps.r, reps.i)
+			}(typeName, reps)
 		}
 		g.Wait()
 		return list
 	}
 }
 
-func entityResolverNameForAnime(ctx context.Context, rep map[string]interface{}) (string, error) {
+type EntityWithIndex struct {
+	// The index in the original representation array
+	index  int
+	entity EntityRepresentation
+}
+
+// EntityRepresentation is the JSON representation of an entity sent by the Router
+// used as the inputs for us to resolve.
+//
+// We make it a map because we know the top level JSON is always an object.
+type EntityRepresentation map[string]any
+
+// We group entities by typename so that we can parallelize their resolution.
+// This is particularly helpful when there are entity groups in multi mode.
+func (ec *executionContext) buildRepresentationGroups(
+	ctx context.Context,
+	representations []map[string]any,
+) map[string][]EntityWithIndex {
+	repsMap := make(map[string][]EntityWithIndex)
+	for i, rep := range representations {
+		typeName, ok := rep["__typename"].(string)
+		if !ok {
+			// If there is no __typename, we just skip the representation;
+			// we just won't be resolving these unknown types.
+			ec.Error(ctx, errors.New("__typename must be an existing string"))
+			continue
+		}
+
+		repsMap[typeName] = append(repsMap[typeName], EntityWithIndex{
+			index:  i,
+			entity: rep,
+		})
+	}
+
+	return repsMap
+}
+
+func (ec *executionContext) resolveEntityGroup(
+	ctx context.Context,
+	typeName string,
+	reps []EntityWithIndex,
+	list []fedruntime.Entity,
+) {
+	if isMulti(typeName) {
+		err := ec.resolveManyEntities(ctx, typeName, reps, list)
+		if err != nil {
+			ec.Error(ctx, err)
+		}
+	} else {
+		// if there are multiple entities to resolve, parallelize (similar to
+		// graphql.FieldSet.Dispatch)
+		var e sync.WaitGroup
+		e.Add(len(reps))
+		for i, rep := range reps {
+			i, rep := i, rep
+			go func(i int, rep EntityWithIndex) {
+				entity, err := ec.resolveEntity(ctx, typeName, rep.entity)
+				if err != nil {
+					ec.Error(ctx, err)
+				} else {
+					list[rep.index] = entity
+				}
+				e.Done()
+			}(i, rep)
+		}
+		e.Wait()
+	}
+}
+
+func isMulti(typeName string) bool {
+	switch typeName {
+	default:
+		return false
+	}
+}
+
+func (ec *executionContext) resolveEntity(
+	ctx context.Context,
+	typeName string,
+	rep EntityRepresentation,
+) (e fedruntime.Entity, err error) {
+	// we need to do our own panic handling, because we may be called in a
+	// goroutine, where the usual panic handling can't catch us
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+		}
+	}()
+
+	switch typeName {
+	case "Anime":
+		resolverName, err := entityResolverNameForAnime(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "Anime": %w`, err)
+		}
+		switch resolverName {
+
+		case "findAnimeByID":
+			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findAnimeByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindAnimeByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Anime": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "ApiInfo":
+		resolverName, err := entityResolverNameForApiInfo(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "ApiInfo": %w`, err)
+		}
+		switch resolverName {
+
+		case "findApiInfoByName":
+			id0, err := ec.unmarshalNString2string(ctx, rep["name"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findApiInfoByName(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindAPIInfoByName(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "ApiInfo": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "UserAnime":
+		resolverName, err := entityResolverNameForUserAnime(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "UserAnime": %w`, err)
+		}
+		switch resolverName {
+
+		case "findUserAnimeByID":
+			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findUserAnimeByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindUserAnimeByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "UserAnime": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "UserList":
+		resolverName, err := entityResolverNameForUserList(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "UserList": %w`, err)
+		}
+		switch resolverName {
+
+		case "findUserListByID":
+			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findUserListByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindUserListByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "UserList": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "UserWork":
+		resolverName, err := entityResolverNameForUserWork(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "UserWork": %w`, err)
+		}
+		switch resolverName {
+
+		case "findUserWorkByID":
+			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findUserWorkByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindUserWorkByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "UserWork": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "Work":
+		resolverName, err := entityResolverNameForWork(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "Work": %w`, err)
+		}
+		switch resolverName {
+
+		case "findWorkByID":
+			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findWorkByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindWorkByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Work": %w`, err)
+			}
+
+			return entity, nil
+		}
+
+	}
+	return nil, fmt.Errorf("%w: %s", ErrUnknownType, typeName)
+}
+
+func (ec *executionContext) resolveManyEntities(
+	ctx context.Context,
+	typeName string,
+	reps []EntityWithIndex,
+	list []fedruntime.Entity,
+) (err error) {
+	// we need to do our own panic handling, because we may be called in a
+	// goroutine, where the usual panic handling can't catch us
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+		}
+	}()
+
+	switch typeName {
+
+	default:
+		return errors.New("unknown type: " + typeName)
+	}
+}
+
+func entityResolverNameForAnime(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for Anime", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Anime", ErrTypeNotFound))
 			break
 		}
 		return "findAnimeByID", nil
 	}
-	return "", fmt.Errorf("%w for Anime", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for Anime due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForApiInfo(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForApiInfo(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["name"]; !ok {
+		val, ok = m["name"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"name\" for ApiInfo", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for ApiInfo", ErrTypeNotFound))
 			break
 		}
 		return "findApiInfoByName", nil
 	}
-	return "", fmt.Errorf("%w for ApiInfo", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for ApiInfo due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForUserAnime(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForUserAnime(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for UserAnime", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for UserAnime", ErrTypeNotFound))
 			break
 		}
 		return "findUserAnimeByID", nil
 	}
-	return "", fmt.Errorf("%w for UserAnime", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for UserAnime due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForUserList(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForUserList(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for UserList", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for UserList", ErrTypeNotFound))
 			break
 		}
 		return "findUserListByID", nil
 	}
-	return "", fmt.Errorf("%w for UserList", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for UserList due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForUserWork(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForUserWork(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for UserWork", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for UserWork", ErrTypeNotFound))
 			break
 		}
 		return "findUserWorkByID", nil
 	}
-	return "", fmt.Errorf("%w for UserWork", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for UserWork due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForWork(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForWork(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for Work", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Work", ErrTypeNotFound))
 			break
 		}
 		return "findWorkByID", nil
 	}
-	return "", fmt.Errorf("%w for Work", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for Work due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }

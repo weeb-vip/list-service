@@ -18,6 +18,7 @@ import (
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_progress"
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_work"
 	"github.com/weeb-vip/list-service/internal/directives"
+	"github.com/weeb-vip/list-service/internal/events"
 	user_anime2 "github.com/weeb-vip/list-service/internal/services/user_anime"
 	user_list2 "github.com/weeb-vip/list-service/internal/services/user_list"
 	user_progress2 "github.com/weeb-vip/list-service/internal/services/user_progress"
@@ -27,12 +28,16 @@ import (
 
 func BuildRootHandler(conf config.Config) http.Handler {
 	database := db.NewDatabase(conf.DBConfig)
+	// List changes write their activity event to the outbox in the same
+	// transaction as the row; `relay outbox` publishes them.
+	txRunner := user_anime2.NewTxRunner(database.DB)
+	eventWriter := events.OutboxWriter{}
 	userListRepository := user_list.NewUserListRepository(database)
 	userListService := user_list2.NewUserListService(userListRepository)
 	userAnimeRepository := user_anime.NewUserAnimeRepository(database)
-	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
+	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository, txRunner, eventWriter)
 	userWorkRepository := user_work.NewUserWorkRepository(database)
-	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
+	userWorkService := user_work2.NewUserWorkService(userWorkRepository, txRunner, eventWriter)
 	userProgressRepository := user_progress.NewUserProgressRepository(database)
 	userProgressService := user_progress2.NewUserProgressService(userProgressRepository, userAnimeRepository, userWorkRepository)
 
@@ -63,12 +68,16 @@ func BuildRootHandler(conf config.Config) http.Handler {
 
 func BuildRootHandlerWithContext(ctx context.Context, conf config.Config) http.Handler {
 	database := db.NewDatabase(conf.DBConfig)
+	// List changes write their activity event to the outbox in the same
+	// transaction as the row; `relay outbox` publishes them.
+	txRunner := user_anime2.NewTxRunner(database.DB)
+	eventWriter := events.OutboxWriter{}
 	userListRepository := user_list.NewUserListRepository(database)
 	userListService := user_list2.NewUserListService(userListRepository)
 	userAnimeRepository := user_anime.NewUserAnimeRepository(database)
-	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository)
+	userAnimeService := user_anime2.NewUserAnimeService(userAnimeRepository, txRunner, eventWriter)
 	userWorkRepository := user_work.NewUserWorkRepository(database)
-	userWorkService := user_work2.NewUserWorkService(userWorkRepository)
+	userWorkService := user_work2.NewUserWorkService(userWorkRepository, txRunner, eventWriter)
 	userProgressRepository := user_progress.NewUserProgressRepository(database)
 	userProgressService := user_progress2.NewUserProgressService(userProgressRepository, userAnimeRepository, userWorkRepository)
 

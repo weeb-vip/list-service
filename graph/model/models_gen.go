@@ -3,6 +3,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -40,6 +41,12 @@ type MarkEpisodeInput struct {
 	EpisodeNumber int    `json:"episodeNumber"`
 	// Defaults to now. Supplied when backfilling something watched earlier.
 	WatchedAt *string `json:"watchedAt,omitempty"`
+}
+
+type Mutation struct {
+}
+
+type Query struct {
 }
 
 // One chapter a reader has finished. Numbered, because works have no chapter records at all.
@@ -236,7 +243,7 @@ func (e Status) String() string {
 	return string(e)
 }
 
-func (e *Status) UnmarshalGQL(v interface{}) error {
+func (e *Status) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -251,6 +258,20 @@ func (e *Status) UnmarshalGQL(v interface{}) error {
 
 func (e Status) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *Status) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e Status) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Reading statuses. Its own enum rather than reusing Status: watching a manga is
@@ -286,7 +307,7 @@ func (e WorkStatus) String() string {
 	return string(e)
 }
 
-func (e *WorkStatus) UnmarshalGQL(v interface{}) error {
+func (e *WorkStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -301,4 +322,18 @@ func (e *WorkStatus) UnmarshalGQL(v interface{}) error {
 
 func (e WorkStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *WorkStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e WorkStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

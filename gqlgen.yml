@@ -43,6 +43,12 @@ resolver:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
+  # gqlgen >= 0.17.5x binds a scalar named Int64 to a Go int by default. The
+  # schema's Int64 predates that and has always been serialised as a string
+  # (the resolvers strconv.FormatInt into it), so pin it to keep the wire
+  # format the frontend parses.
+  Int64:
+    model: github.com/99designs/gqlgen/graphql.String
   Date:
     model: github.com/99designs/gqlgen/graphql.String
   Time:
@@ -61,3 +67,6 @@ models:
   Long:
     model:
       - github.com/99designs/gqlgen/graphql.Int64
+# gqlgen would otherwise run `go mod tidy`, which needs every dependency to be
+# fetchable; the workspace already resolves them.
+skip_mod_tidy: true

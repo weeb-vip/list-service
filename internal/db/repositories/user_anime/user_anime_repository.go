@@ -11,9 +11,21 @@ import (
 	"time"
 )
 
+// UpsertResult says what an upsert did. Previous is the row as it was before
+// an update, nil when Created, so a caller can tell a status change from a
+// progress save without a second read.
+type UpsertResult struct {
+	Entity   *UserAnime
+	Previous *UserAnime
+	Created  bool
+}
+
 type UserAnimeRepositoryImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error)
+	// UpsertTx is Upsert inside the caller's transaction, reporting what changed.
+	UpsertTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) (*UpsertResult, error)
 	Delete(ctx context.Context, userAnime *UserAnime) error
+	DeleteTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) error
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserAnime, int64, error)
 	FindByAnimeId(ctx context.Context, animeId string) ([]*UserAnime, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*UserAnime, error)
@@ -31,11 +43,20 @@ func NewUserAnimeRepository(db *db.DB) UserAnimeRepositoryImpl {
 }
 
 func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error) {
+	result, err := a.UpsertTx(ctx, a.db.DB, userAnime)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Entity, nil
+}
+
+func (a *UserAnimeRepository) UpsertTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) (*UpsertResult, error) {
 	startTime := time.Now()
 
 	// check if animeid and userid already exist
 	var existing *UserAnime
-	err := a.db.DB.WithContext(ctx).Where("user_id = ? AND anime_id = ?", userAnime.UserID, userAnime.AnimeID).First(&existing).Error
+	err := tx.WithContext(ctx).Where("user_id = ? AND anime_id = ?", userAnime.UserID, userAnime.AnimeID).First(&existing).Error
 	if err != nil {
 		if err.Error() != "record not found" && !errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
@@ -50,7 +71,7 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 	// if err is gorm.ErrRecordNotFound, create new userAnime
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		userAnime.ID = uuid.New().String()
-		err := a.db.DB.WithContext(ctx).Create(userAnime).Error
+		err := tx.WithContext(ctx).Create(userAnime).Error
 		if err != nil {
 			_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
 				Service: metrics.GetServiceName(),
@@ -69,17 +90,19 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 			Result:  metrics_lib.Success,
 			Env:     metrics.GetCurrentEnv(),
 		})
-		return userAnime, nil
+		return &UpsertResult{Entity: userAnime, Created: true}, nil
 	}
 
-	// if found, update
+	// if found, update. Keep a copy of what was there for the caller's diff:
+	// gorm's Save below overwrites the struct we read into.
+	previous := *existing
 	userAnime.ID = existing.ID
 	userAnime.CreatedAt = existing.CreatedAt
 	userAnime.UpdatedAt = existing.UpdatedAt
 	userAnime.ListID = existing.ListID
 	userAnime.CreatedAt = existing.CreatedAt
 	userAnime.UpdatedAt = existing.UpdatedAt
-	err = a.db.DB.WithContext(ctx).Save(userAnime).Error
+	err = tx.WithContext(ctx).Save(userAnime).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
 			Service: metrics.GetServiceName(),
@@ -98,13 +121,17 @@ func (a *UserAnimeRepository) Upsert(ctx context.Context, userAnime *UserAnime) 
 		Result:  metrics_lib.Success,
 		Env:     metrics.GetCurrentEnv(),
 	})
-	return userAnime, nil
+	return &UpsertResult{Entity: userAnime, Previous: &previous}, nil
 }
 
 func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) error {
+	return a.DeleteTx(ctx, a.db.DB, userAnime)
+}
+
+func (a *UserAnimeRepository) DeleteTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) error {
 	startTime := time.Now()
 
-	err := a.db.DB.WithContext(ctx).Delete(userAnime).Error
+	err := tx.WithContext(ctx).Delete(userAnime).Error
 	if err != nil {
 		_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
 			Service: metrics.GetServiceName(),

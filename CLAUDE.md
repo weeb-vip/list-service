@@ -6,11 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Build & Run
 - `go run cmd/main.go serve` - Start the GraphQL API server
+- `go run cmd/main.go relay outbox` - Publish `outbox_events` rows (activity events) to NATS JetStream; deployed as its own pod
 - `go build -o main cmd/main.go` - Build the binary
-- `docker-compose up` - Start dependencies (MySQL, Redis)
+- Database is Postgres (DBHOST/DBPORT/DBUSERNAME/DBPASSWORD/DBNAME/DBSSL); NATS via NATSURL
 
 ### Testing
-- `go test ./...` - Run all tests
+- `go test ./...` - Run all tests (`internal/services/*` tests are pure; `internal/events` too)
+- `make test-integration` - End-to-end tests (build tag `integration`) against a real Postgres with the migrations applied
 - `go test -v ./http/handlers/...` - Run specific handler tests
 
 ### Code Generation
@@ -23,6 +25,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make migrate` - Run migrations (alias)
 - `make create-migration name=migration_name` - Create new migration
 - `migrate create -ext sql -dir db/migrations -seq migration_name` - Alternative migration creation
+
+## Activity events
+- `AddAnime`/`UpdateAnime`/`AddWork`/`UpdateWork` upsert inside a transaction and, when the row was created or its status or score changed, write an `outbox_events` row (subject `user-activity`, see `internal/events`). Progress-only saves (episodes, chapters, tags, rewatch) emit nothing, so the feed stays quiet.
+- `DeleteAnime`/`DeleteWork` emit `anime.removed`/`work.removed`.
+- `MarkEpisodeWatched`/`MarkChapterRead` go through the repository directly and never emit.
+- `relay outbox` (go-outbox-lib) publishes rows with `Nats-Msg-Id` = event id; consumers dedupe on the payload `id`.
 
 ## Architecture Overview
 

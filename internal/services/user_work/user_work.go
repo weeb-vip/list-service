@@ -4,7 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"gorm.io/gorm"
+
 	"github.com/weeb-vip/list-service/internal/db/repositories/user_work"
+	"github.com/weeb-vip/list-service/internal/events"
+	"github.com/weeb-vip/list-service/internal/services/user_anime"
 )
 
 // UserWorkStatus is the reading equivalent of UserAnimeStatus.
@@ -58,10 +62,13 @@ type UserWorkServiceImpl interface {
 
 type UserWorkService struct {
 	Repository user_work.UserWorkRepositoryImpl
+	Tx         user_anime.TxRunner
+	Events     events.Writer
 }
 
-func NewUserWorkService(repository user_work.UserWorkRepositoryImpl) UserWorkServiceImpl {
-	return &UserWorkService{Repository: repository}
+// NewUserWorkService wires the service; see NewUserAnimeService.
+func NewUserWorkService(repository user_work.UserWorkRepositoryImpl, tx user_anime.TxRunner, eventWriter events.Writer) UserWorkServiceImpl {
+	return &UserWorkService{Repository: repository, Tx: tx, Events: eventWriter}
 }
 
 func (s *UserWorkService) Upsert(ctx context.Context, userWork *UserWork) (*user_work.UserWork, error) {
@@ -97,7 +104,44 @@ func (s *UserWorkService) Upsert(ctx context.Context, userWork *UserWork) (*user
 		ListID:   userWork.ListID,
 	}
 
-	return s.Repository.Upsert(ctx, entity)
+	var saved *user_work.UserWork
+	err := s.Tx.Transaction(ctx, func(tx *gorm.DB) error {
+		result, err := s.Repository.UpsertTx(ctx, tx, entity)
+		if err != nil {
+			return err
+		}
+		saved = result.Entity
+
+		var previousStatus *string
+		var previousScore *float64
+		if result.Previous != nil {
+			previousStatus = result.Previous.Status
+			previousScore = result.Previous.Score
+		}
+		eventType := events.Decide(result.Created, previousStatus, saved.Status, previousScore, saved.Score,
+			events.WorkAdded, events.WorkStatusChanged, events.WorkScored)
+		if eventType == "" {
+			return nil
+		}
+
+		activity := &events.Activity{
+			Type:   eventType,
+			UserID: userWork.UserID,
+			WorkID: &userWork.WorkID,
+			Status: saved.Status,
+			Score:  saved.Score,
+		}
+		if eventType == events.WorkStatusChanged {
+			activity.PreviousStatus = previousStatus
+		}
+
+		return s.Events.Write(ctx, tx, activity)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return saved, nil
 }
 
 // Delete takes the work id, not the row id, because that is what the caller
@@ -115,7 +159,18 @@ func (s *UserWorkService) Delete(ctx context.Context, userID string, workID stri
 		return nil
 	}
 
-	return s.Repository.Delete(ctx, userWork)
+	return s.Tx.Transaction(ctx, func(tx *gorm.DB) error {
+		if err := s.Repository.DeleteTx(ctx, tx, userWork); err != nil {
+			return err
+		}
+
+		return s.Events.Write(ctx, tx, &events.Activity{
+			Type:           events.WorkRemoved,
+			UserID:         userID,
+			WorkID:         userWork.WorkID,
+			PreviousStatus: userWork.Status,
+		})
+	})
 }
 
 func (s *UserWorkService) FindByUserId(ctx context.Context, userID string, status *string, page int, limit int) ([]*user_work.UserWork, int64, error) {

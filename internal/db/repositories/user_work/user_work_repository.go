@@ -14,9 +14,18 @@ import (
 
 const table = "user_work"
 
+// UpsertResult says what an upsert did; see the user_anime twin.
+type UpsertResult struct {
+	Entity   *UserWork
+	Previous *UserWork
+	Created  bool
+}
+
 type UserWorkRepositoryImpl interface {
 	Upsert(ctx context.Context, userWork *UserWork) (*UserWork, error)
+	UpsertTx(ctx context.Context, tx *gorm.DB, userWork *UserWork) (*UpsertResult, error)
 	Delete(ctx context.Context, userWork *UserWork) error
+	DeleteTx(ctx context.Context, tx *gorm.DB, userWork *UserWork) error
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserWork, int64, error)
 	FindByUserIdAndWorkId(ctx context.Context, userId string, workId string) (*UserWork, error)
 	FindByUserIdAndWorkIds(ctx context.Context, userId string, workIds []string) ([]*UserWork, error)
@@ -49,10 +58,19 @@ func record(startTime time.Time, method metrics_lib.DatabaseMetricMethod, result
 // Keyed on (user_id, work_id) rather than the primary key, because the caller
 // knows which work it is looking at and not whether a row already exists.
 func (r *UserWorkRepository) Upsert(ctx context.Context, userWork *UserWork) (*UserWork, error) {
+	result, err := r.UpsertTx(ctx, r.db.DB, userWork)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Entity, nil
+}
+
+func (r *UserWorkRepository) UpsertTx(ctx context.Context, tx *gorm.DB, userWork *UserWork) (*UpsertResult, error) {
 	startTime := time.Now()
 
 	var existing UserWork
-	err := r.db.DB.WithContext(ctx).
+	err := tx.WithContext(ctx).
 		Where("user_id = ? AND work_id = ?", userWork.UserID, userWork.WorkID).
 		First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -62,18 +80,19 @@ func (r *UserWorkRepository) Upsert(ctx context.Context, userWork *UserWork) (*U
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		userWork.ID = uuid.New().String()
-		if err := r.db.DB.WithContext(ctx).Create(userWork).Error; err != nil {
+		if err := tx.WithContext(ctx).Create(userWork).Error; err != nil {
 			record(startTime, metrics_lib.DatabaseMetricMethodInsert, metrics_lib.Error)
 			return nil, err
 		}
 		record(startTime, metrics_lib.DatabaseMetricMethodInsert, metrics_lib.Success)
 
-		return userWork, nil
+		return &UpsertResult{Entity: userWork, Created: true}, nil
 	}
 
 	// Carry the identity and the timestamps of the row that already exists.
 	// Without this Save writes a zero created_at and the shelf, which orders by
 	// it, reshuffles every time a reader updates their progress.
+	previous := existing
 	userWork.ID = existing.ID
 	userWork.CreatedAt = existing.CreatedAt
 	userWork.UpdatedAt = existing.UpdatedAt
@@ -81,19 +100,23 @@ func (r *UserWorkRepository) Upsert(ctx context.Context, userWork *UserWork) (*U
 		userWork.ListID = existing.ListID
 	}
 
-	if err := r.db.DB.WithContext(ctx).Save(userWork).Error; err != nil {
+	if err := tx.WithContext(ctx).Save(userWork).Error; err != nil {
 		record(startTime, metrics_lib.DatabaseMetricMethodUpdate, metrics_lib.Error)
 		return nil, err
 	}
 	record(startTime, metrics_lib.DatabaseMetricMethodUpdate, metrics_lib.Success)
 
-	return userWork, nil
+	return &UpsertResult{Entity: userWork, Previous: &previous}, nil
 }
 
 func (r *UserWorkRepository) Delete(ctx context.Context, userWork *UserWork) error {
+	return r.DeleteTx(ctx, r.db.DB, userWork)
+}
+
+func (r *UserWorkRepository) DeleteTx(ctx context.Context, tx *gorm.DB, userWork *UserWork) error {
 	startTime := time.Now()
 
-	if err := r.db.DB.WithContext(ctx).Delete(userWork).Error; err != nil {
+	if err := tx.WithContext(ctx).Delete(userWork).Error; err != nil {
 		record(startTime, metrics_lib.DatabaseMetricMethodDelete, metrics_lib.Error)
 		return err
 	}
