@@ -24,6 +24,8 @@ type UserAnimeRepositoryImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*UserAnime, error)
 	// UpsertTx is Upsert inside the caller's transaction, reporting what changed.
 	UpsertTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) (*UpsertResult, error)
+	// CreateBatchTx inserts new rows inside the caller's transaction.
+	CreateBatchTx(ctx context.Context, tx *gorm.DB, userAnimes []*UserAnime) error
 	Delete(ctx context.Context, userAnime *UserAnime) error
 	DeleteTx(ctx context.Context, tx *gorm.DB, userAnime *UserAnime) error
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*UserAnime, int64, error)
@@ -122,6 +124,33 @@ func (a *UserAnimeRepository) UpsertTx(ctx context.Context, tx *gorm.DB, userAni
 		Env:     metrics.GetCurrentEnv(),
 	})
 	return &UpsertResult{Entity: userAnime, Previous: &previous}, nil
+}
+
+func (a *UserAnimeRepository) CreateBatchTx(ctx context.Context, tx *gorm.DB, userAnimes []*UserAnime) error {
+	if len(userAnimes) == 0 {
+		return nil
+	}
+	startTime := time.Now()
+
+	for _, userAnime := range userAnimes {
+		if userAnime.ID == "" {
+			userAnime.ID = uuid.New().String()
+		}
+	}
+	result := metrics_lib.Success
+	err := tx.WithContext(ctx).CreateInBatches(userAnimes, 200).Error
+	if err != nil {
+		result = metrics_lib.Error
+	}
+	_ = metrics.NewMetricsInstance().DatabaseMetric(float64(time.Since(startTime).Milliseconds()), metrics_lib.DatabaseMetricLabels{
+		Service: metrics.GetServiceName(),
+		Table:   "user_anime",
+		Method:  metrics_lib.DatabaseMetricMethodInsert,
+		Result:  result,
+		Env:     metrics.GetCurrentEnv(),
+	})
+
+	return err
 }
 
 func (a *UserAnimeRepository) Delete(ctx context.Context, userAnime *UserAnime) error {

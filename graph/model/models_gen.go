@@ -9,6 +9,13 @@ import (
 	"strconv"
 )
 
+type AddAnimeBatchResult struct {
+	// Shows newly put on the list.
+	Added int `json:"added"`
+	// Inputs left alone: already on the list, or repeated within the call.
+	Skipped int `json:"skipped"`
+}
+
 type Anime struct {
 	ID        string     `json:"id"`
 	UserAnime *UserAnime `json:"userAnime,omitempty"`

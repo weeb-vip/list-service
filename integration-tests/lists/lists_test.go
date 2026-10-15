@@ -185,3 +185,61 @@ func TestAnonymousListChangeIsRejectedAndSilent(t *testing.T) {
 	resp := query(t, "", addAnime, map[string]any{"input": map[string]any{"animeID": uuid.NewString(), "status": "WATCHING"}})
 	assert.NotEmpty(t, resp.Errors)
 }
+
+const addAnimeBatch = `mutation($inputs: [UserAnimeInput!]!) { AddAnimeBatch(inputs: $inputs) { added skipped } }`
+
+func TestAddAnimeBatchImportsWithoutOverwriting(t *testing.T) {
+	user := newUserID(t)
+	kept, fresh1, fresh2 := uuid.NewString(), uuid.NewString(), uuid.NewString()
+
+	// Already on the account, finished and scored.
+	mustData(t, user, addAnime, map[string]any{"input": map[string]any{"animeID": kept, "status": "COMPLETED", "score": 9.0}}, nil)
+	before := len(outboxFor(t, user))
+
+	var out struct {
+		AddAnimeBatch struct{ Added, Skipped int }
+	}
+	mustData(t, user, addAnimeBatch, map[string]any{"inputs": []map[string]any{
+		{"animeID": kept, "status": "PLANTOWATCH"},
+		{"animeID": fresh1, "status": "PLANTOWATCH"},
+		{"animeID": fresh2, "status": "WATCHING"},
+		{"animeID": fresh1, "status": "WATCHING"},
+	}}, &out)
+	assert.Equal(t, 2, out.AddAnimeBatch.Added)
+	assert.Equal(t, 2, out.AddAnimeBatch.Skipped)
+
+	var rows []struct {
+		AnimeID string
+		Status  string
+		Score   *float64
+	}
+	require.NoError(t, database.Raw(`SELECT anime_id::text AS anime_id, status, score FROM user_anime
+		WHERE user_id = ? AND deleted_at IS NULL`, user).Scan(&rows).Error)
+	got := map[string]string{}
+	for _, r := range rows {
+		got[r.AnimeID] = r.Status
+		if r.AnimeID == kept {
+			require.NotNil(t, r.Score)
+			assert.Equal(t, 9.0, *r.Score)
+		}
+	}
+	assert.Equal(t, map[string]string{kept: "COMPLETED", fresh1: "PLANTOWATCH", fresh2: "WATCHING"}, got)
+	assert.Len(t, outboxFor(t, user), before, "an import writes no feed activity")
+
+	// Running the same import again changes nothing.
+	mustData(t, user, addAnimeBatch, map[string]any{"inputs": []map[string]any{{"animeID": fresh1}}}, &out)
+	assert.Equal(t, 0, out.AddAnimeBatch.Added)
+	assert.Equal(t, 1, out.AddAnimeBatch.Skipped)
+}
+
+func TestAddAnimeBatchLimitsAndAuth(t *testing.T) {
+	inputs := make([]map[string]any, 201)
+	for i := range inputs {
+		inputs[i] = map[string]any{"animeID": uuid.NewString()}
+	}
+	resp := query(t, newUserID(t), addAnimeBatch, map[string]any{"inputs": inputs})
+	assert.NotEmpty(t, resp.Errors, "more than 200 is refused")
+
+	resp = query(t, "", addAnimeBatch, map[string]any{"inputs": inputs[:1]})
+	assert.NotEmpty(t, resp.Errors, "anonymous is refused")
+}

@@ -3,6 +3,7 @@ package user_anime
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
@@ -67,6 +68,7 @@ type UserAnimePaginated struct {
 
 type UserAnimeServiceImpl interface {
 	Upsert(ctx context.Context, userAnime *UserAnime) (*user_anime.UserAnime, error)
+	AddBatch(ctx context.Context, userID string, items []BatchItem) (BatchResult, error)
 	Delete(ctx context.Context, userid string, id string) error
 	FindByUserId(ctx context.Context, userId string, status *string, page int, limit int) ([]*user_anime.UserAnime, int64, error)
 	FindByUserIdAndAnimeId(ctx context.Context, userId string, animeId string) (*user_anime.UserAnime, error)
@@ -158,6 +160,91 @@ func (a *UserAnimeService) Upsert(ctx context.Context, userAnime *UserAnime) (*u
 	}
 
 	return saved, nil
+}
+
+// MaxBatch is the most inputs AddBatch takes in one call.
+const MaxBatch = 200
+
+// ErrBatchTooLarge is returned for more than MaxBatch inputs.
+var ErrBatchTooLarge = fmt.Errorf("at most %d shows per call", MaxBatch)
+
+// BatchItem is one show to add.
+type BatchItem struct {
+	AnimeID string
+	Status  *UserAnimeStatus
+}
+
+// BatchResult reports what AddBatch did.
+type BatchResult struct {
+	Added   int
+	Skipped int
+}
+
+// AddBatch puts shows on a user's list that are not on it yet, in one
+// transaction. It is the import path for a list built before sign-in, so a
+// show already on the list keeps its status and score (an import must not
+// downgrade "Completed, 9/10" to "Plan to watch"), repeats within the call
+// count once, and nothing is written to the activity feed: a few hundred
+// "added" events at once would bury followers' feeds.
+func (a *UserAnimeService) AddBatch(ctx context.Context, userID string, items []BatchItem) (BatchResult, error) {
+	if len(items) > MaxBatch {
+		return BatchResult{}, ErrBatchTooLarge
+	}
+	if len(items) == 0 {
+		return BatchResult{}, nil
+	}
+
+	seen := make(map[string]struct{}, len(items))
+	ids := make([]string, 0, len(items))
+	unique := make([]BatchItem, 0, len(items))
+	for _, item := range items {
+		if item.AnimeID == "" {
+			continue
+		}
+		if _, dup := seen[item.AnimeID]; dup {
+			continue
+		}
+		seen[item.AnimeID] = struct{}{}
+		ids = append(ids, item.AnimeID)
+		unique = append(unique, item)
+	}
+
+	existing, err := a.Repository.FindByUserIdAndAnimeIds(ctx, userID, ids)
+	if err != nil {
+		return BatchResult{}, err
+	}
+	onList := make(map[string]struct{}, len(existing))
+	for _, row := range existing {
+		if row.AnimeID != nil {
+			onList[*row.AnimeID] = struct{}{}
+		}
+	}
+
+	rows := make([]*user_anime.UserAnime, 0, len(unique))
+	for _, item := range unique {
+		if _, ok := onList[item.AnimeID]; ok {
+			continue
+		}
+		uid, animeID := userID, item.AnimeID
+		var status *string
+		if item.Status != nil {
+			s := string(*item.Status)
+			status = &s
+		}
+		empty := ""
+		rows = append(rows, &user_anime.UserAnime{UserID: &uid, AnimeID: &animeID, Status: status, Tags: &empty})
+	}
+
+	if len(rows) > 0 {
+		err = a.Tx.Transaction(ctx, func(tx *gorm.DB) error {
+			return a.Repository.CreateBatchTx(ctx, tx, rows)
+		})
+		if err != nil {
+			return BatchResult{}, err
+		}
+	}
+
+	return BatchResult{Added: len(rows), Skipped: len(items) - len(rows)}, nil
 }
 
 func (a *UserAnimeService) Delete(ctx context.Context, userid string, id string) error {

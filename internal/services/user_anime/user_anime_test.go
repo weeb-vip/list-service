@@ -208,3 +208,79 @@ func TestDeleteEmitsRemoved(t *testing.T) {
 }
 
 func ptrStatus(s svc.UserAnimeStatus) *svc.UserAnimeStatus { return &s }
+
+// batchRepo answers the existence lookup and records the batch insert.
+type batchRepo struct {
+	user_anime.UserAnimeRepositoryImpl
+	onList   []string
+	created  []*user_anime.UserAnime
+	asked    []string
+	inserted int
+}
+
+func (b *batchRepo) FindByUserIdAndAnimeIds(_ context.Context, _ string, ids []string) ([]*user_anime.UserAnime, error) {
+	b.asked = ids
+	var rows []*user_anime.UserAnime
+	for _, id := range b.onList {
+		id := id
+		rows = append(rows, &user_anime.UserAnime{AnimeID: &id})
+	}
+
+	return rows, nil
+}
+
+func (b *batchRepo) CreateBatchTx(_ context.Context, _ *gorm.DB, rows []*user_anime.UserAnime) error {
+	b.inserted++
+	b.created = append(b.created, rows...)
+
+	return nil
+}
+
+func status(s svc.UserAnimeStatus) *svc.UserAnimeStatus { return &s }
+
+func TestAddBatchSkipsShowsAlreadyOnTheList(t *testing.T) {
+	repo := &batchRepo{onList: []string{"a2"}}
+	writer := &fakeWriter{}
+	var ran bool
+	service := &svc.UserAnimeService{Repository: repo, Tx: txRunner(&ran), Events: writer}
+
+	result, err := service.AddBatch(context.Background(), "u1", []svc.BatchItem{
+		{AnimeID: "a1", Status: status("PLANTOWATCH")},
+		{AnimeID: "a2", Status: status("PLANTOWATCH")},
+		{AnimeID: "a3", Status: status("WATCHING")},
+		{AnimeID: "a1", Status: status("WATCHING")},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, svc.BatchResult{Added: 2, Skipped: 2}, result)
+	assert.Equal(t, []string{"a1", "a2", "a3"}, repo.asked)
+	require.Len(t, repo.created, 2)
+	assert.Equal(t, "a1", *repo.created[0].AnimeID)
+	assert.Equal(t, "PLANTOWATCH", *repo.created[0].Status, "first occurrence wins")
+	assert.Equal(t, "a3", *repo.created[1].AnimeID)
+	assert.Equal(t, "u1", *repo.created[1].UserID)
+	assert.Equal(t, 1, repo.inserted, "one insert for the whole batch")
+	assert.True(t, ran, "the insert runs in a transaction")
+	assert.Empty(t, writer.written, "an import writes no feed activity")
+}
+
+func TestAddBatchNothingNew(t *testing.T) {
+	repo := &batchRepo{onList: []string{"a1"}}
+	var ran bool
+	service := &svc.UserAnimeService{Repository: repo, Tx: txRunner(&ran), Events: &fakeWriter{}}
+
+	result, err := service.AddBatch(context.Background(), "u1", []svc.BatchItem{{AnimeID: "a1"}})
+
+	require.NoError(t, err)
+	assert.Equal(t, svc.BatchResult{Added: 0, Skipped: 1}, result)
+	assert.False(t, ran, "no transaction when there is nothing to insert")
+}
+
+func TestAddBatchRejectsMoreThanTheLimit(t *testing.T) {
+	service := &svc.UserAnimeService{Repository: &batchRepo{}, Events: &fakeWriter{}}
+	items := make([]svc.BatchItem, svc.MaxBatch+1)
+
+	_, err := service.AddBatch(context.Background(), "u1", items)
+
+	assert.ErrorIs(t, err, svc.ErrBatchTooLarge)
+}

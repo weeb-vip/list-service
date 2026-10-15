@@ -327,3 +327,52 @@ func GetUserAnimeByAnimeIDWithLoader(ctx context.Context, animeID string) (*mode
 	// This should not happen in normal flow
 	return nil, errors.New("DataLoader not available in context")
 }
+
+// AddUserAnimeBatch imports shows onto the caller's list; see AddBatch.
+func AddUserAnimeBatch(ctx context.Context, userAnimeService user_anime.UserAnimeServiceImpl, inputs []*model.UserAnimeInput) (*model.AddAnimeBatchResult, error) {
+	tracer := tracing.GetTracer(ctx)
+	ctx, span := tracer.Start(ctx, "AddUserAnimeBatch")
+	span.SetAttributes(
+		attribute.String("resolver.name", "AddUserAnimeBatch"),
+		attribute.Int("batch.size", len(inputs)),
+	)
+	defer span.End()
+
+	startTime := time.Now()
+	fail := func(err error) (*model.AddAnimeBatchResult, error) {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		metrics.GetAppMetrics().ResolverMetric(float64(time.Since(startTime).Milliseconds()), "AddUserAnimeBatch", metrics.Error)
+		return nil, err
+	}
+
+	userID := requestinfo.FromContext(ctx).UserID
+	if userID == nil {
+		return fail(errors.New("User ID is missing, unauthenticated"))
+	}
+	span.SetAttributes(attribute.String("user.id", *userID))
+
+	items := make([]user_anime.BatchItem, 0, len(inputs))
+	for _, input := range inputs {
+		if input == nil {
+			continue
+		}
+		item := user_anime.BatchItem{AnimeID: input.AnimeID}
+		if input.Status != nil {
+			status := user_anime.UserAnimeStatus(*input.Status)
+			item.Status = &status
+		}
+		items = append(items, item)
+	}
+
+	result, err := userAnimeService.AddBatch(ctx, *userID, items)
+	if err != nil {
+		return fail(err)
+	}
+
+	span.SetAttributes(attribute.Int("batch.added", result.Added), attribute.Int("batch.skipped", result.Skipped))
+	span.SetStatus(codes.Ok, "")
+	metrics.GetAppMetrics().ResolverMetric(float64(time.Since(startTime).Milliseconds()), "AddUserAnimeBatch", metrics.Success)
+
+	return &model.AddAnimeBatchResult{Added: result.Added, Skipped: result.Skipped}, nil
+}

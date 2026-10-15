@@ -37,6 +37,11 @@ func (r *mutationResolver) AddAnime(ctx context.Context, input model.UserAnimeIn
 	return resolvers.UpsertUserAnime(ctx, r.UserAnimeService, input)
 }
 
+// AddAnimeBatch is the resolver for the AddAnimeBatch field.
+func (r *mutationResolver) AddAnimeBatch(ctx context.Context, inputs []*model.UserAnimeInput) (*model.AddAnimeBatchResult, error) {
+	return resolvers.AddUserAnimeBatch(ctx, r.UserAnimeService, inputs)
+}
+
 // UpdateAnime is the resolver for the UpdateAnime field.
 func (r *mutationResolver) UpdateAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error) {
 	return resolvers.UpsertUserAnime(ctx, r.UserAnimeService, input)
