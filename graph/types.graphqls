@@ -14,6 +14,13 @@ type UserAnime @key(fields: "id") {
     deletedAt: String
 }
 
+type AddAnimeBatchResult {
+    "Shows newly put on the list."
+    added: Int!
+    "Inputs left alone: already on the list, or repeated within the call."
+    skipped: Int!
+}
+
 type UserAnimePaginated {
     page: Int!
     limit: Int!

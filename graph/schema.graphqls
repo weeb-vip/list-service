@@ -37,6 +37,13 @@ type Mutation {
     CreateList(input: UserListInput!): UserList! @Authenticated
     DeleteList(id: ID!): Boolean! @Authenticated
     AddAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    """
+    Adds many shows in one call, for a list a visitor built before signing in.
+    Shows already on the caller's list are left exactly as they are (skipped),
+    so an import never overwrites a status or score. At most 200 inputs per
+    call; send more in chunks. Imports write no feed activity.
+    """
+    AddAnimeBatch(inputs: [UserAnimeInput!]!): AddAnimeBatchResult! @Authenticated
     UpdateAnime(input: UserAnimeInput!): UserAnime! @Authenticated
     DeleteAnime(id: ID!): Boolean! @Authenticated
     AddWork(input: UserWorkInput!): UserWork! @Authenticated

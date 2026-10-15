@@ -53,6 +53,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AddAnimeBatchResult struct {
+		Added   func(childComplexity int) int
+		Skipped func(childComplexity int) int
+	}
+
 	Anime struct {
 		ID        func(childComplexity int) int
 		UserAnime func(childComplexity int) int
@@ -78,6 +83,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddAnime             func(childComplexity int, input model.UserAnimeInput) int
+		AddAnimeBatch        func(childComplexity int, inputs []*model.UserAnimeInput) int
 		AddWork              func(childComplexity int, input model.UserWorkInput) int
 		CreateList           func(childComplexity int, input model.UserListInput) int
 		DeleteAnime          func(childComplexity int, id string) int
@@ -223,6 +229,7 @@ type MutationResolver interface {
 	CreateList(ctx context.Context, input model.UserListInput) (*model.UserList, error)
 	DeleteList(ctx context.Context, id string) (bool, error)
 	AddAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
+	AddAnimeBatch(ctx context.Context, inputs []*model.UserAnimeInput) (*model.AddAnimeBatchResult, error)
 	UpdateAnime(ctx context.Context, input model.UserAnimeInput) (*model.UserAnime, error)
 	DeleteAnime(ctx context.Context, id string) (bool, error)
 	AddWork(ctx context.Context, input model.UserWorkInput) (*model.UserWork, error)
@@ -268,6 +275,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AddAnimeBatchResult.added":
+		if e.complexity.AddAnimeBatchResult.Added == nil {
+			break
+		}
+
+		return e.complexity.AddAnimeBatchResult.Added(childComplexity), true
+
+	case "AddAnimeBatchResult.skipped":
+		if e.complexity.AddAnimeBatchResult.Skipped == nil {
+			break
+		}
+
+		return e.complexity.AddAnimeBatchResult.Skipped(childComplexity), true
 
 	case "Anime.id":
 		if e.complexity.Anime.ID == nil {
@@ -387,6 +408,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.AddAnime(childComplexity, args["input"].(model.UserAnimeInput)), true
+
+	case "Mutation.AddAnimeBatch":
+		if e.complexity.Mutation.AddAnimeBatch == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_AddAnimeBatch_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddAnimeBatch(childComplexity, args["inputs"].([]*model.UserAnimeInput)), true
 
 	case "Mutation.AddWork":
 		if e.complexity.Mutation.AddWork == nil {
@@ -1284,6 +1317,13 @@ type Mutation {
     CreateList(input: UserListInput!): UserList! @Authenticated
     DeleteList(id: ID!): Boolean! @Authenticated
     AddAnime(input: UserAnimeInput!): UserAnime! @Authenticated
+    """
+    Adds many shows in one call, for a list a visitor built before signing in.
+    Shows already on the caller's list are left exactly as they are (skipped),
+    so an import never overwrites a status or score. At most 200 inputs per
+    call; send more in chunks. Imports write no feed activity.
+    """
+    AddAnimeBatch(inputs: [UserAnimeInput!]!): AddAnimeBatchResult! @Authenticated
     UpdateAnime(input: UserAnimeInput!): UserAnime! @Authenticated
     DeleteAnime(id: ID!): Boolean! @Authenticated
     AddWork(input: UserWorkInput!): UserWork! @Authenticated
@@ -1308,6 +1348,13 @@ type Mutation {
     createdAt: String
     updatedAt: String
     deletedAt: String
+}
+
+type AddAnimeBatchResult {
+    "Shows newly put on the list."
+    added: Int!
+    "Inputs left alone: already on the list, or repeated within the call."
+    skipped: Int!
 }
 
 type UserAnimePaginated {
@@ -1614,6 +1661,17 @@ func (ec *executionContext) field_Entity_findWorkByID_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_AddAnimeBatch_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "inputs", ec.unmarshalNUserAnimeInput2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInputᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["inputs"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_AddAnime_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1917,6 +1975,94 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AddAnimeBatchResult_added(ctx context.Context, field graphql.CollectedField, obj *model.AddAnimeBatchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AddAnimeBatchResult_added(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Added, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AddAnimeBatchResult_added(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AddAnimeBatchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AddAnimeBatchResult_skipped(ctx context.Context, field graphql.CollectedField, obj *model.AddAnimeBatchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AddAnimeBatchResult_skipped(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Skipped, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AddAnimeBatchResult_skipped(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AddAnimeBatchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Anime_id(ctx context.Context, field graphql.CollectedField, obj *model.Anime) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Anime_id(ctx, field)
@@ -2866,6 +3012,89 @@ func (ec *executionContext) fieldContext_Mutation_AddAnime(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_AddAnime_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_AddAnimeBatch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_AddAnimeBatch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddAnimeBatch(rctx, fc.Args["inputs"].([]*model.UserAnimeInput))
+		}
+
+		directive1 := func(ctx context.Context) (any, error) {
+			if ec.directives.Authenticated == nil {
+				var zeroVal *model.AddAnimeBatchResult
+				return zeroVal, errors.New("directive Authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.AddAnimeBatchResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/weeb-vip/list-service/graph/model.AddAnimeBatchResult`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AddAnimeBatchResult)
+	fc.Result = res
+	return ec.marshalNAddAnimeBatchResult2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAddAnimeBatchResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_AddAnimeBatch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "added":
+				return ec.fieldContext_AddAnimeBatchResult_added(ctx, field)
+			case "skipped":
+				return ec.fieldContext_AddAnimeBatchResult_skipped(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AddAnimeBatchResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_AddAnimeBatch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9941,6 +10170,50 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 
 // region    **************************** object.gotpl ****************************
 
+var addAnimeBatchResultImplementors = []string{"AddAnimeBatchResult"}
+
+func (ec *executionContext) _AddAnimeBatchResult(ctx context.Context, sel ast.SelectionSet, obj *model.AddAnimeBatchResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, addAnimeBatchResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AddAnimeBatchResult")
+		case "added":
+			out.Values[i] = ec._AddAnimeBatchResult_added(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skipped":
+			out.Values[i] = ec._AddAnimeBatchResult_skipped(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var animeImplementors = []string{"Anime", "_Entity"}
 
 func (ec *executionContext) _Anime(ctx context.Context, sel ast.SelectionSet, obj *model.Anime) graphql.Marshaler {
@@ -10337,6 +10610,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "AddAnime":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_AddAnime(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "AddAnimeBatch":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_AddAnimeBatch(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -11718,6 +11998,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAddAnimeBatchResult2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAddAnimeBatchResult(ctx context.Context, sel ast.SelectionSet, v model.AddAnimeBatchResult) graphql.Marshaler {
+	return ec._AddAnimeBatchResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAddAnimeBatchResult2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAddAnimeBatchResult(ctx context.Context, sel ast.SelectionSet, v *model.AddAnimeBatchResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AddAnimeBatchResult(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNAnime2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐAnime(ctx context.Context, sel ast.SelectionSet, v model.Anime) graphql.Marshaler {
 	return ec._Anime(ctx, sel, &v)
 }
@@ -11969,6 +12263,26 @@ func (ec *executionContext) marshalNUserAnime2ᚖgithubᚗcomᚋweebᚑvipᚋlis
 func (ec *executionContext) unmarshalNUserAnimeInput2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx context.Context, v any) (model.UserAnimeInput, error) {
 	res, err := ec.unmarshalInputUserAnimeInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUserAnimeInput2ᚕᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInputᚄ(ctx context.Context, v any) ([]*model.UserAnimeInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.UserAnimeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUserAnimeInput2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNUserAnimeInput2ᚖgithubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeInput(ctx context.Context, v any) (*model.UserAnimeInput, error) {
+	res, err := ec.unmarshalInputUserAnimeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUserAnimeStatusCounts2githubᚗcomᚋweebᚑvipᚋlistᚑserviceᚋgraphᚋmodelᚐUserAnimeStatusCounts(ctx context.Context, sel ast.SelectionSet, v model.UserAnimeStatusCounts) graphql.Marshaler {
